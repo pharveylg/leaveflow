@@ -338,8 +338,8 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────
-var SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbzI6sHM2IrOZkbOjRjLwOrXdqdMN0tIa354J5nvHsQnJTuoc8Q2-cNR0UO6lrj-4p3j/exec';
-var GOOGLE_CLIENT_ID = '611776738539-31lnbkp2qr1c18h9lba36v3oboiff3od.apps.googleusercontent.com'; // ← paste OAuth Client ID here
+var SCRIPT_URL       = 'https://script.google.com/macros/s/AKfycbwfPgSFPTEMSMk_Sz4izFb59S12URg0Gxqf3Cxx1Tb7-WvnVfkbXDMyLx1N-GjJWCv7/exec';
+var GOOGLE_CLIENT_ID = '611776738539-31lnbkp2qr1c18h9lba36v3oboiff3od.apps.googleusercontent.com';
 
 // ── STATE ─────────────────────────────────────────────────────
 var currentUser  = null;   // matched employee record
@@ -398,16 +398,12 @@ function showLoader(on) {
 
 // ── API ───────────────────────────────────────────────────────
 function api(action, data, method) {
-  method = method || 'POST';
+  // Apps Script requires no-cors GET for cross-origin requests from GitHub Pages.
+  // We encode all data as a JSON param on the URL.
   var url = SCRIPT_URL + '?action=' + action;
-  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
-  if (method === 'POST' && data) opts.body = JSON.stringify(data);
-  if (method === 'GET') url += (data ? '&' + objToParams(data) : '');
-  return fetch(url, opts).then(function(r) { return r.json(); });
-}
-
-function objToParams(obj) {
-  return Object.keys(obj).map(function(k){ return k+'='+encodeURIComponent(obj[k]); }).join('&');
+  if (data) url += '&payload=' + encodeURIComponent(JSON.stringify(data));
+  return fetch(url, { method: 'GET', redirect: 'follow' })
+    .then(function(r) { return r.json(); });
 }
 
 function loadAppData() {
