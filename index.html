@@ -367,7 +367,7 @@ function handleGoogleSignIn(response) {
   var payload = parseJwt(response.credential);
   googleEmail = payload.email;
   showLoader(true);
-  api('whoami', null, 'GET').then(function(res) {
+  api('whoami', { email: googleEmail }).then(function(res) {
     if (res.matched) {
       currentUser = res.user;
       loadAppData();
