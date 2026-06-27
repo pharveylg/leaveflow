@@ -72,11 +72,28 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 .leave-item-dates{font-size:12px;color:var(--mist);font-family:var(--mono)}
 .leave-item-actions{display:flex;gap:6px;flex-wrap:wrap}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;cursor:pointer;transition:border-color .2s}
+.stat-card:hover{border-color:var(--sky)}
+.stat-card.active{border-color:var(--sky)}
 .stat-value{font-size:26px;font-weight:700;color:var(--white);font-family:var(--mono);line-height:1}
 .stat-label{font-size:11px;color:var(--text-dim);margin-top:4px}
 .balance-bar{background:var(--navy-mid);border-radius:4px;height:6px;overflow:hidden;margin-top:6px}
 .balance-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--sky),var(--mint))}
+/* Drill-down */
+.drill-container{grid-column:1/-1}
+.drill-panel{background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-height:0;transition:max-height .3s ease}
+.drill-panel.open{max-height:600px;overflow-y:auto}
+.drill-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.drill-title{font-size:12px;font-weight:600;color:var(--white)}
+.drill-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1}
+.drill-item{display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.drill-item:last-child{border-bottom:none}
+.drill-item:hover{background:rgba(46,142,232,.06)}
+.drill-item-top{display:flex;align-items:center;justify-content:space-between}
+.drill-dates{font-size:11px;color:var(--mist);font-family:var(--mono)}
+.drill-meta{font-size:11px;color:var(--text-dim)}
+.drill-empty{padding:20px 14px;text-align:center;font-size:12px;color:var(--text-dim)}
+/* Timeline */
 .timeline{display:flex;flex-direction:column}
 .tl-item{display:flex;gap:10px}
 .tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
@@ -148,12 +165,10 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 .preview-row:last-child{border-bottom:none}
 .preview-cell{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .preview-head{color:var(--text-dim);font-weight:600}
-/* Login screen */
 .login-screen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:999;padding:32px}
 .login-logo{font-size:28px;font-weight:700;color:var(--white)}.login-logo span{color:var(--sky)}
 .login-sub{font-size:13px;color:var(--text-dim);text-align:center;max-width:280px}
 .login-error{font-size:12px;color:var(--rose);text-align:center;display:none}
-/* Loader */
 .loader{position:fixed;inset:0;background:rgba(15,27,45,.85);display:flex;align-items:center;justify-content:center;z-index:998;display:none}
 .loader.show{display:flex}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite}
@@ -162,7 +177,6 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 </head>
 <body>
 
-<!-- Login Screen -->
 <div class="login-screen" id="login-screen">
   <div class="login-logo">Leave<span>Flow</span></div>
   <div class="login-sub">Sign in with your Google account to access your leave dashboard.</div>
@@ -172,21 +186,12 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     data-auto_select="true"
     data-use_fedcm_for_prompt="true">
   </div>
-  <div class="g_id_signin"
-    data-type="standard"
-    data-shape="rectangular"
-    data-theme="outline"
-    data-text="sign_in_with"
-    data-size="large"
-    data-logo_alignment="left">
-  </div>
+  <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="sign_in_with" data-size="large" data-logo_alignment="left"></div>
   <div class="login-error" id="login-error"></div>
 </div>
 
-<!-- Loader -->
 <div class="loader" id="loader"><div class="spinner"></div></div>
 
-<!-- App Shell -->
 <div class="app" id="app" style="display:none">
   <div class="topbar">
     <div class="topbar-logo">Leave<span>Flow</span></div>
@@ -201,7 +206,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
   <div class="content" id="main-content"></div>
   <nav class="nav" id="bottom-nav"></nav>
 
-  <!-- Panels -->
+  <!-- New Leave -->
   <div class="panel" id="panel-newleave">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-newleave')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -246,6 +251,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     </div>
   </div>
 
+  <!-- Award Leave -->
   <div class="panel" id="panel-award">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-award')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -270,6 +276,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     </div>
   </div>
 
+  <!-- Detail -->
   <div class="panel" id="panel-detail">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-detail')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -279,6 +286,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     <div class="panel-footer" id="detail-footer"></div>
   </div>
 
+  <!-- Credits -->
   <div class="panel" id="panel-credits">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-credits')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -291,6 +299,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     </div>
   </div>
 
+  <!-- CSV -->
   <div class="panel" id="panel-csv">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-csv')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -313,6 +322,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     </div>
   </div>
 
+  <!-- Full Audit -->
   <div class="panel" id="panel-fullaudit">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-fullaudit')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -325,6 +335,7 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
     </div>
   </div>
 
+  <!-- User Menu -->
   <div class="panel" id="panel-usermenu">
     <div class="panel-header">
       <button class="panel-back" onclick="closePanel('panel-usermenu')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -342,18 +353,20 @@ var SCRIPT_URL       = 'https://script.google.com/macros/s/AKfycbwANCkZyoqPPKT-r
 var GOOGLE_CLIENT_ID = '611776738539-31lnbkp2qr1c18h9lba36v3oboiff3od.apps.googleusercontent.com';
 
 // ── STATE ─────────────────────────────────────────────────────
-var currentUser  = null;   // matched employee record
-var googleEmail  = null;   // raw Google email
+var currentUser  = null;
+var googleEmail  = null;
 var PERSONAS     = [];
 var leaves       = [];
-var balancesMap  = {};     // keyed by userId
+var balancesMap  = {};
 var auditLog     = [];
 var currentTab   = 'my';
 var leaveFilter  = 'all';
+var adminReqFilter = { status:'all', type:'all', person:'all' };
 var awardTargetId = null;
 var creditTarget  = null;
 var csvParsed     = [];
 var auditExportFilters = { type:'all', category:'all', dateFrom:'', dateTo:'' };
+var openDrillKey  = null; // tracks which balance card is expanded
 
 var QUOTAS = { annual:20, sick:10, personal:5, parental:90, unpaid:30, awarded:999 };
 var LEAVE_TYPES = {
@@ -361,6 +374,7 @@ var LEAVE_TYPES = {
   'Parental Leave':'parental','Unpaid Leave':'unpaid','Management Awarded Leave':'awarded'
 };
 var AUDIT_ICONS = { a:'✓', r:'✕', s:'↑', e:'✎', c:'₵', w:'🏅', u:'↑' };
+var DRILL_TYPES = ['Annual Leave','Sick Leave','Personal Leave'];
 
 // ── GOOGLE SIGN-IN ────────────────────────────────────────────
 function handleGoogleSignIn(response) {
@@ -368,145 +382,63 @@ function handleGoogleSignIn(response) {
   googleEmail = payload.email;
   showLoader(true);
   api('whoami', { email: googleEmail }).then(function(res) {
-    if (res.matched) {
-      currentUser = res.user;
-      loadAppData();
-    } else {
-      showLoader(false);
-      showLoginError('Your Google account (' + googleEmail + ') is not linked to an employee record. Please contact your administrator.');
-    }
-  }).catch(function(err) {
-    showLoader(false);
-    showLoginError('Connection error. Please try again.');
-  });
+    if (res.matched) { currentUser = res.user; loadAppData(); }
+    else { showLoader(false); showLoginError('Your Google account (' + googleEmail + ') is not linked to an employee record. Please contact your administrator.'); }
+  }).catch(function() { showLoader(false); showLoginError('Connection error. Please try again.'); });
 }
-
 function parseJwt(token) {
-  var base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-  return JSON.parse(atob(base64));
+  var b = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+  return JSON.parse(atob(b));
 }
-
-function showLoginError(msg) {
-  var el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-function showLoader(on) {
-  document.getElementById('loader').className = on ? 'loader show' : 'loader';
-}
+function showLoginError(msg) { var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
+function showLoader(on) { document.getElementById('loader').className = on ? 'loader show' : 'loader'; }
 
 // ── API ───────────────────────────────────────────────────────
-function api(action, data, method) {
-  // Apps Script requires no-cors GET for cross-origin requests from GitHub Pages.
-  // We encode all data as a JSON param on the URL.
+function api(action, data) {
   var url = SCRIPT_URL + '?action=' + action;
   if (data) url += '&payload=' + encodeURIComponent(JSON.stringify(data));
-  return fetch(url, { method: 'GET', redirect: 'follow' })
-    .then(function(r) { return r.json(); });
+  return fetch(url, { method:'GET', redirect:'follow' }).then(function(r){ return r.json(); });
 }
-
 function loadAppData() {
   Promise.all([
-    api('getEmployees', null, 'GET'),
-    api('getLeaves',    null, 'GET'),
-    api('getBalances',  null, 'GET'),
-    api('getAuditLog',  null, 'GET')
+    api('getEmployees'), api('getLeaves'), api('getBalances'), api('getAuditLog')
   ]).then(function(results) {
     PERSONAS = results[0] || [];
     leaves   = results[1] || [];
-    // Build balances map
     balancesMap = {};
-    (results[2] || []).forEach(function(b) { balancesMap[b.userId] = b; });
+    (results[2] || []).forEach(function(b){ balancesMap[b.userId] = b; });
     auditLog = results[3] || [];
-    // Parse scope back from pipe-separated string
-    auditLog.forEach(function(a) {
-      if (typeof a.scope === 'string') a.scope = a.scope.split('|');
-    });
-    showLoader(false);
-    bootApp();
-  }).catch(function(err) {
-    showLoader(false);
-    showLoginError('Failed to load data. Please refresh.');
-  });
+    auditLog.forEach(function(a){ if (typeof a.scope === 'string') a.scope = a.scope.split('|'); });
+    showLoader(false); bootApp();
+  }).catch(function() { showLoader(false); showLoginError('Failed to load data. Please refresh.'); });
 }
-
 function bootApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  updateTopbar();
-  renderNav();
-  renderContent();
+  updateTopbar(); renderNav(); renderContent();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
-function getUser(id) {
-  for (var i = 0; i < PERSONAS.length; i++) {
-    if (PERSONAS[i].id === id) return PERSONAS[i];
-  }
-  return { name:'Unknown', initials:'?', dept:'', role:'employee', id:id };
-}
-function getBal(uid) {
-  return balancesMap[uid] || { annual:0, sick:0, personal:0, parental:0, unpaid:0, awarded:0 };
-}
-function ensureBal(uid) {
-  if (!balancesMap[uid]) balancesMap[uid] = { userId:uid, annual:0, sick:0, personal:0, parental:0, unpaid:0, awarded:0 };
-}
-function fmt(d) {
-  if (!d) return '—';
-  var x = new Date(d.replace(' ','T'));
-  return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-}
-function fmtTs(ts) {
-  if (!ts) return '';
-  var x = new Date(ts.replace(' ','T'));
-  return x.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-}
-function typeClass(t) { return LEAVE_TYPES[t] || 'annual'; }
-function statusBadge(s) {
-  var cls = s==='approved'?'approved':s==='rejected'?'rejected':s==='awarded'?'awarded':'pending';
-  return '<span class="badge badge-'+cls+'">'+s+'</span>';
-}
+function getUser(id) { for (var i=0;i<PERSONAS.length;i++){if(PERSONAS[i].id===id)return PERSONAS[i];} return {name:'Unknown',initials:'?',dept:'',role:'employee',id:id}; }
+function getBal(uid) { return balancesMap[uid]||{annual:0,sick:0,personal:0,parental:0,unpaid:0,awarded:0}; }
+function ensureBal(uid) { if(!balancesMap[uid]) balancesMap[uid]={userId:uid,annual:0,sick:0,personal:0,parental:0,unpaid:0,awarded:0}; }
+function fmt(d) { if(!d)return'—'; var x=new Date(d.replace(' ','T')); return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtTs(ts) { if(!ts)return''; var x=new Date(ts.replace(' ','T')); return x.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
+function typeClass(t) { return LEAVE_TYPES[t]||'annual'; }
+function statusBadge(s) { var c=s==='approved'?'approved':s==='rejected'?'rejected':s==='awarded'?'awarded':'pending'; return '<span class="badge badge-'+c+'">'+s+'</span>'; }
 function typePill(t) { return '<span class="type-pill type-'+typeClass(t)+'">'+t+'</span>'; }
-function nowStr() {
-  var d = new Date();
-  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-}
-function pad(n) { return n < 10 ? '0'+n : ''+n; }
+function nowStr() { var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+function pad(n) { return n<10?'0'+n:''+n; }
 function uid() { return 'L'+Date.now().toString().slice(-6); }
-function toast(msg, color) {
-  color = color || '#00C49F';
-  document.getElementById('toast-dot').style.background = color;
-  document.getElementById('toast-msg').textContent = msg;
-  var t = document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 3000);
-}
+function toast(msg,color) { color=color||'#00C49F'; document.getElementById('toast-dot').style.background=color; document.getElementById('toast-msg').textContent=msg; var t=document.getElementById('toast'); t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},3000); }
 function openPanel(id) { document.getElementById(id).classList.add('active'); }
 function closePanel(id) { document.getElementById(id).classList.remove('active'); }
-
-function getAllReports(userId, visited) {
-  visited = visited || {};
-  if (visited[userId]) return [];
-  visited[userId] = true;
-  var out = [];
-  for (var i = 0; i < PERSONAS.length; i++) {
-    if (PERSONAS[i].manager === userId) {
-      out.push(PERSONAS[i]);
-      var sub = getAllReports(PERSONAS[i].id, visited);
-      for (var j = 0; j < sub.length; j++) out.push(sub[j]);
-    }
-  }
-  return out;
-}
-
-function addAuditLocal(type, action, targetId, detail, scope, category) {
-  var entry = { id:'A'+Date.now(), action:action, userId:currentUser.id, targetId:targetId,
-    detail:detail, at:nowStr(), type:type, scope:scope||[currentUser.id], category:category||'general' };
+function getAllReports(userId,visited) { visited=visited||{}; if(visited[userId])return[]; visited[userId]=true; var out=[]; for(var i=0;i<PERSONAS.length;i++){if(PERSONAS[i].manager===userId){out.push(PERSONAS[i]);var sub=getAllReports(PERSONAS[i].id,visited);for(var j=0;j<sub.length;j++)out.push(sub[j]);}} return out; }
+function addAuditLocal(type,action,targetId,detail,scope,category) {
+  var entry={id:'A'+Date.now(),action:action,userId:currentUser.id,targetId:targetId,detail:detail,at:nowStr(),type:type,scope:scope||[currentUser.id],category:category||'general'};
   auditLog.unshift(entry);
-  var send = JSON.parse(JSON.stringify(entry));
-  send.scope = send.scope.join('|');
-  api('addAudit', send);
+  var send=JSON.parse(JSON.stringify(entry)); send.scope=send.scope.join('|');
+  api('addAudit',send);
 }
 
 // ── TOPBAR ────────────────────────────────────────────────────
@@ -515,7 +447,6 @@ function updateTopbar() {
   document.getElementById('topbar-role').textContent = currentUser.role[0].toUpperCase()+currentUser.role.slice(1);
   document.getElementById('topbar-avatar').textContent = currentUser.initials;
 }
-
 function showUserMenu() {
   document.getElementById('usermenu-content').innerHTML =
     '<div class="card" style="text-align:center">' +
@@ -524,19 +455,16 @@ function showUserMenu() {
       '<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+googleEmail+'</div>' +
       '<div style="margin-top:8px"><span class="role-badge" style="background:'+roleBadgeBg(currentUser.role)+';color:var(--navy)">'+currentUser.role+'</span></div>' +
       '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">'+currentUser.dept+'</div>' +
-    '</div>' +
-    '<button class="btn btn-ghost btn-full" onclick="signOut()">Sign Out</button>';
+    '</div><button class="btn btn-ghost btn-full" onclick="signOut()">Sign Out</button>';
   openPanel('panel-usermenu');
 }
-
 function roleBadgeBg(r) { return r==='admin'?'var(--rose)':r==='manager'?'var(--amber)':'var(--sky)'; }
-
 function signOut() {
   google.accounts.id.disableAutoSelect();
-  currentUser = null; googleEmail = null;
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-error').style.display = 'none';
+  currentUser=null; googleEmail=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-error').style.display='none';
   closePanel('panel-usermenu');
 }
 
@@ -547,528 +475,589 @@ var TABS = {
   admin:   { label:'Admin',    icon:'<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14M12 2v2M12 20v2M2 12h2M20 12h2"/>' }
 };
 function allowedTabs() {
-  if (currentUser.role === 'admin')   return ['my','manager','admin'];
-  if (currentUser.role === 'manager') return ['my','manager'];
+  if (currentUser.role==='admin')   return ['my','manager','admin'];
+  if (currentUser.role==='manager') return ['my','manager'];
   return ['my'];
 }
 function renderNav() {
-  var tabs = allowedTabs();
-  if (tabs.indexOf(currentTab) < 0) currentTab = 'my';
-  var html = '';
-  for (var i = 0; i < tabs.length; i++) {
-    var k = tabs[i], t = TABS[k];
-    html += '<div class="nav-tab '+(currentTab===k?'active':'')+'" onclick="switchTab(\''+k+'\')" '+(k==='manager'?'style="position:relative"':'')+'>'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+t.icon+'</svg>'+
-      t.label+
+  var tabs=allowedTabs();
+  if (tabs.indexOf(currentTab)<0) currentTab='my';
+  var html='';
+  for (var i=0;i<tabs.length;i++) {
+    var k=tabs[i],t=TABS[k];
+    html+='<div class="nav-tab '+(currentTab===k?'active':'')+'" onclick="switchTab(\''+k+'\')" '+(k==='manager'?'style="position:relative"':'')+'>'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+t.icon+'</svg>'+t.label+
       (k==='manager'?'<div class="bubble" id="pending-bubble" style="display:none">0</div>':'')+
     '</div>';
   }
-  document.getElementById('bottom-nav').innerHTML = html;
+  document.getElementById('bottom-nav').innerHTML=html;
   updatePendingBubble();
 }
 function updatePendingBubble() {
-  var b = document.getElementById('pending-bubble'); if (!b) return;
-  var tree = getAllReports(currentUser.id).map(function(p){ return p.id; });
-  var n = 0;
-  for (var i = 0; i < leaves.length; i++) {
-    if (leaves[i].status === 'pending' && tree.indexOf(leaves[i].userId) >= 0) n++;
-  }
-  b.textContent = n; b.style.display = n > 0 ? 'flex' : 'none';
+  var b=document.getElementById('pending-bubble'); if(!b)return;
+  var tree=getAllReports(currentUser.id).map(function(p){return p.id;});
+  var n=0; for(var i=0;i<leaves.length;i++){if(leaves[i].status==='pending'&&tree.indexOf(leaves[i].userId)>=0)n++;}
+  b.textContent=n; b.style.display=n>0?'flex':'none';
 }
-function switchTab(tab) { currentTab = tab; leaveFilter = 'all'; renderNav(); renderContent(); }
+function switchTab(tab) { currentTab=tab; leaveFilter='all'; openDrillKey=null; renderNav(); renderContent(); }
 function renderContent() {
-  if (currentTab === 'my')      renderMyLeave();
+  if (currentTab==='my')      renderMyLeave();
+  else if (currentTab==='manager') renderManager();
+  else if (currentTab==='admin')   renderAdmin();
+}
+
+// ── BALANCE DRILL-DOWN ────────────────────────────────────────
+function toggleDrill(key, userId) {
+  if (openDrillKey === key) { openDrillKey = null; }
+  else { openDrillKey = key; }
+  // re-render to reflect state
+  if (currentTab === 'my') renderMyLeave();
   else if (currentTab === 'manager') renderManager();
-  else if (currentTab === 'admin')   renderAdmin();
+  else if (currentTab === 'admin') renderAdmin();
+}
+
+function drillPanel(key, userId, leaveType) {
+  var isOpen = openDrillKey === key;
+  var userLeaves = leaves.filter(function(l){ return l.userId === userId && l.type === leaveType; });
+  var items = userLeaves.length === 0
+    ? '<div class="drill-empty">No '+leaveType+' records found.</div>'
+    : userLeaves.map(function(l){
+        return '<div class="drill-item" onclick="openLeaveDetail(\''+l.id+'\')">' +
+          '<div class="drill-item-top">'+statusBadge(l.status)+'<span class="drill-dates">'+fmt(l.start)+(l.days>1?' → '+fmt(l.end):'')+'</span></div>' +
+          '<div class="drill-meta">'+l.days+'d'+
+            (l.category?' · 📂 '+l.category:'')+
+            (l.reason?' · "'+l.reason+'"':'')+
+          '</div>' +
+        '</div>';
+      }).join('');
+  return '<div class="drill-container"><div class="drill-panel '+(isOpen?'open':'')+'">' +
+    '<div class="drill-header"><span class="drill-title">'+leaveType+' History</span><button class="drill-close" onclick="toggleDrill(\''+key+'\',\''+userId+'\')">×</button></div>' +
+    items + '</div></div>';
+}
+
+function balanceCardDrill(label, key, used, userId) {
+  var leaveType = label + ' Leave';
+  var drillKey = userId + '-' + key;
+  var total = QUOTAS[key]||20;
+  var pct = Math.min(100,Math.round(used/total*100));
+  var color = used/total>.8?'var(--rose)':used/total>.5?'var(--amber)':'linear-gradient(90deg,var(--sky),var(--mint))';
+  var isOpen = openDrillKey === drillKey;
+  return '<div class="stat-card '+(isOpen?'active':'')+'" onclick="toggleDrill(\''+drillKey+'\',\''+userId+'\')">' +
+    '<div class="stat-value">'+used+'</div>' +
+    '<div class="stat-label">'+label+' used / '+total+'</div>' +
+    '<div class="balance-bar"><div class="balance-fill" style="width:'+pct+'%;background:'+color+'"></div></div>' +
+    '<div style="font-size:10px;color:var(--sky);margin-top:6px;text-align:right">'+(isOpen?'▲ hide':'▼ details')+'</div>' +
+  '</div>';
 }
 
 // ── MY LEAVE ─────────────────────────────────────────────────
 function renderMyLeave() {
-  var myLeaves = leaves.filter(function(l){ return l.userId === currentUser.id; });
-  ensureBal(currentUser.id);
-  var bal = getBal(currentUser.id);
-  var filters = ['all','pending','approved','rejected'];
-  var filtered = leaveFilter === 'all' ? myLeaves : myLeaves.filter(function(l){ return l.status === leaveFilter; });
-  var bc = document.getElementById('nl-balance-card');
-  if (bc) bc.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Your Balance</div>' +
-    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Annual Leave</span>' +
-    '<span style="font-size:12px;font-family:var(--mono);color:var(--mint)">'+(bal.annual||0)+' / '+QUOTAS.annual+' days</span></div>' +
+  var uid = currentUser.id;
+  var myLeaves = leaves.filter(function(l){ return l.userId===uid; });
+  ensureBal(uid); var bal=getBal(uid);
+  var filters=['all','pending','approved','rejected'];
+  var filtered = leaveFilter==='all'?myLeaves:myLeaves.filter(function(l){return l.status===leaveFilter;});
+
+  var bc=document.getElementById('nl-balance-card');
+  if(bc) bc.innerHTML='<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Your Balance</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Annual Leave</span>'+
+    '<span style="font-size:12px;font-family:var(--mono);color:var(--mint)">'+(bal.annual||0)+' / '+QUOTAS.annual+' days</span></div>'+
     '<div class="balance-bar"><div class="balance-fill" style="width:'+Math.min(100,Math.round((bal.annual||0)/QUOTAS.annual*100))+'%"></div></div>';
 
-  var leaveItems = filtered.length === 0
+  var leaveItems = filtered.length===0
     ? '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No requests found</div></div>'
     : filtered.map(function(l){
         return '<div class="leave-item" onclick="openLeaveDetail(\''+l.id+'\')" style="cursor:pointer">' +
-          '<div class="leave-item-top"><div>'+typePill(l.type)+'<div class="leave-item-dates" style="margin-top:6px">'+fmt(l.start)+' → '+fmt(l.end)+' · <strong>'+l.days+'d</strong></div></div>' +
+          '<div class="leave-item-top"><div>'+typePill(l.type)+'<div class="leave-item-dates" style="margin-top:6px">'+fmt(l.start)+' → '+fmt(l.end)+' · <strong>'+l.days+'d</strong></div></div>'+
           (l.type==='Management Awarded Leave'?statusBadge('awarded'):statusBadge(l.status))+'</div>'+
           (l.category?'<div class="leave-item-meta">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':
            l.awardComment?'<div class="leave-item-meta">🏅 '+l.awardComment+'</div>':'')+
         '</div>';
       }).join('');
 
-  document.getElementById('main-content').innerHTML =
+  // Build grid with drill-downs interleaved
+  var annKey=uid+'-annual', sickKey=uid+'-sick', perKey=uid+'-personal';
+  document.getElementById('main-content').innerHTML=
     '<div><div class="section-title">Leave Balance</div>' +
     '<div class="stats-grid" style="margin-top:8px">' +
-      balanceCard('Annual','annual',bal.annual||0) +
-      balanceCard('Sick','sick',bal.sick||0) +
-      balanceCard('Personal','personal',bal.personal||0) +
+      balanceCardDrill('Annual','annual',bal.annual||0,uid) +
+      balanceCardDrill('Sick','sick',bal.sick||0,uid) +
+      (openDrillKey===annKey ? drillPanel(annKey,uid,'Annual Leave') : '') +
+      (openDrillKey===sickKey ? drillPanel(sickKey,uid,'Sick Leave') : '') +
+      balanceCardDrill('Personal','personal',bal.personal||0,uid) +
       '<div class="stat-card" style="cursor:pointer;border-color:var(--sky)" onclick="openPanel(\'panel-newleave\')">' +
         '<div style="font-size:28px;text-align:center;margin-bottom:4px">＋</div>' +
         '<div class="stat-label" style="text-align:center;font-size:12px;color:var(--sky);font-weight:600">New Request</div>' +
       '</div>' +
+      (openDrillKey===perKey ? drillPanel(perKey,uid,'Personal Leave') : '') +
     '</div></div>' +
     '<div><div class="section-title" style="margin-bottom:8px">My Requests</div>' +
     '<div class="chip-row" style="margin-bottom:10px">' +
-      filters.map(function(f){ return '<div class="chip '+(leaveFilter===f?'active':'')+'" onclick="setLeaveFilter(\''+f+'\')">'+f[0].toUpperCase()+f.slice(1)+'</div>'; }).join('') +
+      filters.map(function(f){return'<div class="chip '+(leaveFilter===f?'active':'')+'" onclick="setLeaveFilter(\''+f+'\')">'+f[0].toUpperCase()+f.slice(1)+'</div>';}).join('') +
     '</div><div class="card">'+leaveItems+'</div></div>' +
-    inlineAuditSection(function(a){ return a.scope && a.scope.indexOf(currentUser.id) >= 0; }, 'my-audit-toggle','my-audit-content','🕐 My Activity Log');
+    inlineAuditSection(function(a){return a.scope&&a.scope.indexOf(uid)>=0;},'my-audit-toggle','my-audit-content','🕐 My Activity Log');
 }
-function balanceCard(label, key, used) {
-  var total = QUOTAS[key] || 20, pct = Math.min(100, Math.round(used/total*100));
-  var color = used/total > .8 ? 'var(--rose)' : used/total > .5 ? 'var(--amber)' : 'linear-gradient(90deg,var(--sky),var(--mint))';
-  return '<div class="stat-card"><div class="stat-value">'+used+'</div><div class="stat-label">'+label+' used / '+total+'</div>' +
-    '<div class="balance-bar"><div class="balance-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>';
-}
-function setLeaveFilter(f) { leaveFilter = f; renderMyLeave(); }
+function setLeaveFilter(f) { leaveFilter=f; renderMyLeave(); }
 
 // ── LEAVE DETAIL ─────────────────────────────────────────────
 function openLeaveDetail(id) {
-  var l = null;
-  for (var i = 0; i < leaves.length; i++) { if (leaves[i].id === id) { l = leaves[i]; break; } }
-  if (!l) return;
-  var emp = getUser(l.userId), mgr = getUser(l.managerId);
-  var isAwarded = l.type === 'Management Awarded Leave';
-  document.getElementById('detail-title').textContent = l.id + ' — ' + l.type;
-  document.getElementById('detail-content').innerHTML =
-    '<div class="card">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
-        '<div class="avatar">'+emp.initials+'</div>' +
-        '<div><div style="font-weight:600;color:var(--white)">'+emp.name+'</div><div style="font-size:11px;color:var(--text-dim)">'+emp.dept+'</div></div>' +
-        '<div style="margin-left:auto">'+(isAwarded?statusBadge('awarded'):statusBadge(l.status))+'</div>' +
-      '</div><div class="divider" style="margin-bottom:12px"></div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-        '<div><div class="form-hint">Type</div><div style="margin-top:3px">'+typePill(l.type)+'</div></div>' +
-        '<div><div class="form-hint">Duration</div><div style="font-size:13px;color:var(--white);margin-top:3px">'+l.days+' day'+(l.days!='1'?'s':'')+'</div></div>' +
-        '<div><div class="form-hint">Start</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.start)+'</div></div>' +
-        '<div><div class="form-hint">End</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.end)+'</div></div>' +
-      '</div>' +
+  var l=null; for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}} if(!l)return;
+  var emp=getUser(l.userId),mgr=getUser(l.managerId);
+  var isAwarded=l.type==='Management Awarded Leave';
+  document.getElementById('detail-title').textContent=l.id+' — '+l.type;
+  document.getElementById('detail-content').innerHTML=
+    '<div class="card">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
+        '<div class="avatar">'+emp.initials+'</div>'+
+        '<div><div style="font-weight:600;color:var(--white)">'+emp.name+'</div><div style="font-size:11px;color:var(--text-dim)">'+emp.dept+'</div></div>'+
+        '<div style="margin-left:auto">'+(isAwarded?statusBadge('awarded'):statusBadge(l.status))+'</div>'+
+      '</div><div class="divider" style="margin-bottom:12px"></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+        '<div><div class="form-hint">Type</div><div style="margin-top:3px">'+typePill(l.type)+'</div></div>'+
+        '<div><div class="form-hint">Duration</div><div style="font-size:13px;color:var(--white);margin-top:3px">'+l.days+' day'+(l.days!='1'?'s':'')+'</div></div>'+
+        '<div><div class="form-hint">Start</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.start)+'</div></div>'+
+        '<div><div class="form-hint">End</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.end)+'</div></div>'+
+      '</div>'+
       (l.category?'<div style="margin-top:12px"><div class="form-hint">Category</div><div style="margin-top:3px"><span class="type-pill type-personal">'+l.category+'</span></div></div>':'')+
       (l.reason?'<div style="margin-top:10px"><div class="form-hint">Remarks</div><div style="font-size:13px;color:var(--mist);margin-top:3px">"'+l.reason+'"</div></div>':'')+
       (l.awardComment?'<div style="margin-top:10px"><div class="form-hint">Approval Source</div><div style="font-size:13px;color:var(--amber);margin-top:3px">🏅 '+l.awardComment+'</div></div>':'')+
-    '</div>' +
-    (isAwarded ? '<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Management Awarded Leave bypasses the standard approval workflow.</div>' :
-      '<div><div class="section-title" style="margin-bottom:8px">Approval Timeline</div><div class="timeline">' +
-        '<div class="tl-item"><div class="tl-line"><div class="tl-dot done"></div><div class="tl-connector"></div></div><div class="tl-body"><div class="tl-label">Submitted</div><div class="tl-meta">'+emp.name+' · '+fmtTs(l.createdAt)+'</div></div></div>' +
-        '<div class="tl-item"><div class="tl-line"><div class="tl-dot '+(l.status==='approved'?'done':l.status==='rejected'?'rejected':'pending')+'"></div>'+(l.status!=='pending'?'<div class="tl-connector"></div>':'')+'</div>' +
-          '<div class="tl-body"><div class="tl-label">Manager Review — '+(mgr.name||'—')+'</div>' +
-          '<div class="tl-meta">'+(l.status==='pending'?'Awaiting review':l.status==='approved'?'Approved · '+fmtTs(l.approvedAt):'Rejected · '+fmtTs(l.rejectedAt)+(l.rejectReason?' — '+l.rejectReason:''))+'</div></div></div>' +
+    '</div>'+
+    (isAwarded?'<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Management Awarded Leave bypasses the standard approval workflow.</div>':
+      '<div><div class="section-title" style="margin-bottom:8px">Approval Timeline</div><div class="timeline">'+
+        '<div class="tl-item"><div class="tl-line"><div class="tl-dot done"></div><div class="tl-connector"></div></div><div class="tl-body"><div class="tl-label">Submitted</div><div class="tl-meta">'+emp.name+' · '+fmtTs(l.createdAt)+'</div></div></div>'+
+        '<div class="tl-item"><div class="tl-line"><div class="tl-dot '+(l.status==='approved'?'done':l.status==='rejected'?'rejected':'pending')+'"></div>'+(l.status!=='pending'?'<div class="tl-connector"></div>':'')+
+        '</div><div class="tl-body"><div class="tl-label">Manager Review — '+(mgr.name||'—')+'</div>'+
+        '<div class="tl-meta">'+(l.status==='pending'?'Awaiting review':l.status==='approved'?'Approved · '+fmtTs(l.approvedAt):'Rejected · '+fmtTs(l.rejectedAt)+(l.rejectReason?' — '+l.rejectReason:''))+'</div></div></div>'+
         (l.status==='approved'?'<div class="tl-item"><div class="tl-line"><div class="tl-dot done"></div></div><div class="tl-body"><div class="tl-label">Confirmed</div><div class="tl-meta">Leave recorded in system</div></div></div>':'')+
       '</div></div>');
-
-  var tree = getAllReports(currentUser.id).map(function(p){ return p.id; });
-  var isMgr = tree.indexOf(l.userId) >= 0 && l.status === 'pending' && !isAwarded;
-  var isAdmin = currentUser.role === 'admin';
-  document.getElementById('detail-footer').innerHTML = isMgr
-    ? '<button class="btn btn-reject" style="flex:1" onclick="actionLeave(\''+l.id+'\',\'reject\')">Reject</button><button class="btn btn-approve" style="flex:2" onclick="actionLeave(\''+l.id+'\',\'approve\')">Approve</button>'
-    : (isAdmin && !isAwarded && l.status !== 'rejected'
-        ? '<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button><button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button><button class="btn btn-ghost btn-sm" onclick="closePanel(\'panel-detail\')">Close</button>'
-        : '<button class="btn btn-primary btn-full" onclick="closePanel(\'panel-detail\')">Close</button>');
+  var tree=getAllReports(currentUser.id).map(function(p){return p.id;});
+  var isMgr=tree.indexOf(l.userId)>=0&&l.status==='pending'&&!isAwarded;
+  var isAdmin=currentUser.role==='admin';
+  document.getElementById('detail-footer').innerHTML=isMgr
+    ?'<button class="btn btn-reject" style="flex:1" onclick="actionLeave(\''+l.id+'\',\'reject\')">Reject</button><button class="btn btn-approve" style="flex:2" onclick="actionLeave(\''+l.id+'\',\'approve\')">Approve</button>'
+    :(isAdmin&&!isAwarded&&l.status!=='rejected'
+      ?'<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button><button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button><button class="btn btn-ghost btn-sm" onclick="closePanel(\'panel-detail\')">Close</button>'
+      :'<button class="btn btn-primary btn-full" onclick="closePanel(\'panel-detail\')">Close</button>');
   openPanel('panel-detail');
 }
 
 // ── SUBMIT LEAVE ──────────────────────────────────────────────
 function submitLeave() {
-  var type     = document.getElementById('leave-type').value;
-  var start    = document.getElementById('leave-start').value;
-  var end      = document.getElementById('leave-end').value;
-  var days     = document.getElementById('leave-days').value;
-  var category = document.getElementById('leave-category').value;
-  var reason   = document.getElementById('leave-reason').value.trim();
-  var cover    = document.getElementById('leave-cover').value;
-  if (!type||!start||!end||!category) { toast('Please fill required fields','#EF4444'); return; }
-  var mgr = getUser(currentUser.manager);
-  var id  = uid();
-  var rec = { id:id, userId:currentUser.id, type:type, start:start, end:end, days:days,
-    category:category, reason:reason, awardComment:'', status:'pending',
-    managerId:currentUser.manager||'admin1', createdAt:nowStr(),
-    approvedAt:'', approvedBy:'', rejectedAt:'', rejectedBy:'', rejectReason:'', cover:cover };
+  var type=document.getElementById('leave-type').value;
+  var start=document.getElementById('leave-start').value;
+  var end=document.getElementById('leave-end').value;
+  var days=document.getElementById('leave-days').value;
+  var category=document.getElementById('leave-category').value;
+  var reason=document.getElementById('leave-reason').value.trim();
+  var cover=document.getElementById('leave-cover').value;
+  if(!type||!start||!end||!category){toast('Please fill required fields','#EF4444');return;}
+  var mgr=getUser(currentUser.manager);
+  var id=uid();
+  var rec={id:id,userId:currentUser.id,type:type,start:start,end:end,days:days,
+    category:category,reason:reason,awardComment:'',status:'pending',
+    managerId:currentUser.manager||'admin1',createdAt:nowStr(),
+    approvedAt:'',approvedBy:'',rejectedAt:'',rejectedBy:'',rejectReason:'',cover:cover};
   leaves.unshift(rec);
-  var scope = [currentUser.id, currentUser.manager||'admin1'];
-  addAuditLocal('s','submitted',id, currentUser.name+' submitted '+type+' — '+category+' ('+days+'d)', scope, 'submission');
-  api('upsertLeave', rec).then(function(){ toast('Request submitted to '+(mgr.name||'manager'),'#00C49F'); });
+  var scope=[currentUser.id,currentUser.manager||'admin1'];
+  addAuditLocal('s','submitted',id,currentUser.name+' submitted '+type+' — '+category+' ('+days+'d)',scope,'submission');
+  api('upsertLeave',rec).then(function(){toast('Request submitted to '+(mgr.name||'manager'),'#00C49F');});
   closePanel('panel-newleave'); renderMyLeave();
 }
 
-// ── MANAGER VIEW ──────────────────────────────────────────────
+// ── MANAGER ───────────────────────────────────────────────────
 function renderManager() {
-  var tree    = getAllReports(currentUser.id);
-  var treeIds = tree.map(function(p){ return p.id; });
-  var pending = leaves.filter(function(l){ return l.status==='pending' && treeIds.indexOf(l.userId)>=0 && l.type!=='Management Awarded Leave'; });
-  var allTeam = leaves.filter(function(l){ return treeIds.indexOf(l.userId)>=0; });
-  var approved = allTeam.filter(function(l){ return l.status==='approved'; }).length;
-  var rejected = allTeam.filter(function(l){ return l.status==='rejected'; }).length;
-
-  var pendingHtml = '';
-  if (pending.length) {
-    pendingHtml = '<div><div class="section-title" style="margin-bottom:8px">Needs Your Approval</div><div class="card">' +
-      pending.map(function(l){
-        var emp = getUser(l.userId);
-        return '<div class="leave-item">' +
-          '<div class="leave-item-top"><div style="display:flex;align-items:center;gap:8px">' +
-            '<div class="avatar" style="width:28px;height:28px;font-size:10px">'+emp.initials+'</div>' +
-            '<div><div class="leave-item-name">'+emp.name+'</div><div class="leave-item-meta">'+fmt(l.start)+(l.days>1?' → '+fmt(l.end):'')+' · '+l.days+'d</div></div>' +
-          '</div>'+typePill(l.type)+'</div>' +
-          (l.category?'<div class="leave-item-meta" style="padding-left:36px">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':'')+
-          '<div class="leave-item-actions" style="padding-left:36px">' +
-            '<button class="btn btn-reject btn-sm" onclick="actionLeave(\''+l.id+'\',\'reject\');event.stopPropagation()">Reject</button>' +
-            '<button class="btn btn-approve btn-sm" onclick="actionLeave(\''+l.id+'\',\'approve\');event.stopPropagation()">Approve</button>' +
-            '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\');event.stopPropagation()">View</button>' +
-            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+l.userId+'\');event.stopPropagation()">+ Award</button>' +
-          '</div></div>';
-      }).join('') + '</div></div>';
+  var tree=getAllReports(currentUser.id);
+  var treeIds=tree.map(function(p){return p.id;});
+  var pending=leaves.filter(function(l){return l.status==='pending'&&treeIds.indexOf(l.userId)>=0&&l.type!=='Management Awarded Leave';});
+  var allTeam=leaves.filter(function(l){return treeIds.indexOf(l.userId)>=0;});
+  var approved=allTeam.filter(function(l){return l.status==='approved';}).length;
+  var rejected=allTeam.filter(function(l){return l.status==='rejected';}).length;
+  var pendingHtml='';
+  if(pending.length){
+    pendingHtml='<div><div class="section-title" style="margin-bottom:8px">Needs Your Approval</div><div class="card">'+
+      pending.map(function(l){var emp=getUser(l.userId);return'<div class="leave-item">'+
+        '<div class="leave-item-top"><div style="display:flex;align-items:center;gap:8px">'+
+          '<div class="avatar" style="width:28px;height:28px;font-size:10px">'+emp.initials+'</div>'+
+          '<div><div class="leave-item-name">'+emp.name+'</div><div class="leave-item-meta">'+fmt(l.start)+(l.days>1?' → '+fmt(l.end):'')+' · '+l.days+'d</div></div>'+
+        '</div>'+typePill(l.type)+'</div>'+
+        (l.category?'<div class="leave-item-meta" style="padding-left:36px">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':'')+
+        '<div class="leave-item-actions" style="padding-left:36px">'+
+          '<button class="btn btn-reject btn-sm" onclick="actionLeave(\''+l.id+'\',\'reject\');event.stopPropagation()">Reject</button>'+
+          '<button class="btn btn-approve btn-sm" onclick="actionLeave(\''+l.id+'\',\'approve\');event.stopPropagation()">Approve</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\');event.stopPropagation()">View</button>'+
+          '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+l.userId+'\');event.stopPropagation()">+ Award</button>'+
+        '</div></div>';}).join('')+
+    '</div></div>';
   }
-
-  document.getElementById('main-content').innerHTML =
-    '<div class="stats-grid">' +
-      '<div class="stat-card"><div class="stat-value" style="color:var(--amber)">'+pending.length+'</div><div class="stat-label">Pending Approval</div></div>' +
-      '<div class="stat-card"><div class="stat-value">'+tree.length+'</div><div class="stat-label">Total Reports</div></div>' +
-      '<div class="stat-card"><div class="stat-value" style="color:var(--mint)">'+approved+'</div><div class="stat-label">Approved Total</div></div>' +
-      '<div class="stat-card"><div class="stat-value" style="color:var(--rose)">'+rejected+'</div><div class="stat-label">Rejected Total</div></div>' +
-    '</div>' + pendingHtml +
-    '<div><div class="section-title" style="margin-bottom:8px">Team Overview</div><div class="card">' +
+  document.getElementById('main-content').innerHTML=
+    '<div class="stats-grid">'+
+      '<div class="stat-card"><div class="stat-value" style="color:var(--amber)">'+pending.length+'</div><div class="stat-label">Pending Approval</div></div>'+
+      '<div class="stat-card"><div class="stat-value">'+tree.length+'</div><div class="stat-label">Total Reports</div></div>'+
+      '<div class="stat-card"><div class="stat-value" style="color:var(--mint)">'+approved+'</div><div class="stat-label">Approved Total</div></div>'+
+      '<div class="stat-card"><div class="stat-value" style="color:var(--rose)">'+rejected+'</div><div class="stat-label">Rejected Total</div></div>'+
+    '</div>'+pendingHtml+
+    '<div><div class="section-title" style="margin-bottom:8px">Team Overview</div><div class="card">'+
       tree.map(function(emp){
-        ensureBal(emp.id); var bal = getBal(emp.id);
-        var isDirect = emp.manager === currentUser.id ? 'direct' : 'indirect';
-        return '<div class="role-item">' +
-          '<div class="role-user"><div class="avatar" style="width:30px;height:30px;font-size:11px">'+emp.initials+'</div>' +
-          '<div class="role-info"><div class="role-name">'+emp.name+' <span style="font-size:9px;color:var(--text-dim)">'+isDirect+'</span></div>' +
-          '<div class="role-email">'+(bal.annual||0)+'/'+QUOTAS.annual+' annual used</div></div></div>' +
-          '<div style="display:flex;align-items:center;gap:6px">' +
-            '<div class="balance-bar" style="width:50px"><div class="balance-fill" style="width:'+Math.round((bal.annual||0)/QUOTAS.annual*100)+'%"></div></div>' +
-            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+emp.id+'\')">Award</button>' +
-          '</div></div>';
-      }).join('') +
-    '</div></div>' +
-    '<div><div class="section-title" style="margin-bottom:8px">Leave Distribution</div><div class="card">' +
-      hbar('Annual', sumDays(allTeam,'Annual Leave'),   30,'#2E8EE8') +
-      hbar('Sick',   sumDays(allTeam,'Sick Leave'),     30,'#EF4444') +
-      hbar('Personal',sumDays(allTeam,'Personal Leave'),30,'#C084FC') +
-      hbar('Awarded', sumDays(allTeam,'Management Awarded Leave'),30,'#F59E0B') +
-    '</div></div>' +
-    inlineAuditSection(
-      function(a){ return a.scope && (a.scope.indexOf(currentUser.id)>=0 || treeIds.some(function(id){ return a.scope.indexOf(id)>=0; })); },
-      'mgr-audit-toggle','mgr-audit-content','🕐 Team Activity Log');
+        ensureBal(emp.id);var bal=getBal(emp.id);
+        var isDirect=emp.manager===currentUser.id?'direct':'indirect';
+        var annKey=emp.id+'-annual',sickKey=emp.id+'-sick',perKey=emp.id+'-personal';
+        return '<div class="role-item" style="flex-direction:column;align-items:stretch;gap:10px">'+
+          '<div style="display:flex;align-items:center;justify-content:space-between">'+
+            '<div class="role-user"><div class="avatar" style="width:30px;height:30px;font-size:11px">'+emp.initials+'</div>'+
+            '<div class="role-info"><div class="role-name">'+emp.name+' <span style="font-size:9px;color:var(--text-dim)">'+isDirect+'</span></div></div></div>'+
+            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+emp.id+'\')">Award</button>'+
+          '</div>'+
+          '<div class="stats-grid" style="gap:6px">'+
+            balanceCardDrill('Annual','annual',bal.annual||0,emp.id)+
+            balanceCardDrill('Sick','sick',bal.sick||0,emp.id)+
+            (openDrillKey===annKey?drillPanel(annKey,emp.id,'Annual Leave'):'')+
+            (openDrillKey===sickKey?drillPanel(sickKey,emp.id,'Sick Leave'):'')+
+            balanceCardDrill('Personal','personal',bal.personal||0,emp.id)+
+            (openDrillKey===perKey?drillPanel(perKey,emp.id,'Personal Leave'):'')+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div></div>'+
+    '<div><div class="section-title" style="margin-bottom:8px">Leave Distribution</div><div class="card">'+
+      hbar('Annual',sumDays(allTeam,'Annual Leave'),30,'#2E8EE8')+
+      hbar('Sick',sumDays(allTeam,'Sick Leave'),30,'#EF4444')+
+      hbar('Personal',sumDays(allTeam,'Personal Leave'),30,'#C084FC')+
+      hbar('Awarded',sumDays(allTeam,'Management Awarded Leave'),30,'#F59E0B')+
+    '</div></div>'+
+    inlineAuditSection(function(a){return a.scope&&(a.scope.indexOf(currentUser.id)>=0||treeIds.some(function(id){return a.scope.indexOf(id)>=0;}));},'mgr-audit-toggle','mgr-audit-content','🕐 Team Activity Log');
 }
-function sumDays(arr, type) {
-  var s = 0;
-  for (var i = 0; i < arr.length; i++) { if (arr[i].type === type) s += parseFloat(arr[i].days)||0; }
-  return s;
-}
-function hbar(label,val,max,color) {
-  return '<div class="hbar-row"><div class="hbar-label">'+label+'</div><div class="hbar-track"><div class="hbar-fill" style="width:'+Math.round(Math.min(val,max)/max*100)+'%;background:'+color+'"></div></div><div class="hbar-val">'+val+'d</div></div>';
-}
-function actionLeave(id, action) {
-  var l = null; for (var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
-  if (!l) return;
-  var emp = getUser(l.userId);
-  var scope = [l.userId, currentUser.id, 'admin1'];
-  if (action === 'approve') {
-    l.status='approved'; l.approvedAt=nowStr(); l.approvedBy=currentUser.id;
+function sumDays(arr,type){var s=0;for(var i=0;i<arr.length;i++){if(arr[i].type===type)s+=parseFloat(arr[i].days)||0;}return s;}
+function hbar(label,val,max,color){return'<div class="hbar-row"><div class="hbar-label">'+label+'</div><div class="hbar-track"><div class="hbar-fill" style="width:'+Math.round(Math.min(val,max)/max*100)+'%;background:'+color+'"></div></div><div class="hbar-val">'+val+'d</div></div>';}
+function actionLeave(id,action){
+  var l=null;for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}if(!l)return;
+  var emp=getUser(l.userId);var scope=[l.userId,currentUser.id,'admin1'];
+  if(action==='approve'){
+    l.status='approved';l.approvedAt=nowStr();l.approvedBy=currentUser.id;
     addAuditLocal('a','approved',l.id,currentUser.name+' approved '+l.type+' for '+emp.name,scope,'approval');
-    api('upsertLeave', l);
-    toast('✓ Approved '+emp.name+'\'s '+l.type,'#00C49F');
+    api('upsertLeave',l);toast('✓ Approved '+emp.name+'\'s '+l.type,'#00C49F');
   } else {
-    l.status='rejected'; l.rejectedAt=nowStr(); l.rejectedBy=currentUser.id;
+    l.status='rejected';l.rejectedAt=nowStr();l.rejectedBy=currentUser.id;
     addAuditLocal('r','rejected',l.id,currentUser.name+' rejected '+l.type+' for '+emp.name,scope,'rejection');
-    api('upsertLeave', l);
-    toast('✕ Rejected '+emp.name+'\'s request','#EF4444');
+    api('upsertLeave',l);toast('✕ Rejected '+emp.name+'\'s request','#EF4444');
   }
-  closePanel('panel-detail'); renderContent();
+  closePanel('panel-detail');renderContent();
 }
 
 // ── AWARD LEAVE ───────────────────────────────────────────────
-function openAwardPanel(userId) {
-  awardTargetId = userId;
-  document.getElementById('award-title').textContent = 'Award Leave — '+getUser(userId).name;
-  document.getElementById('award-comment').value = '';
+function openAwardPanel(userId){
+  awardTargetId=userId;
+  document.getElementById('award-title').textContent='Award Leave — '+getUser(userId).name;
+  document.getElementById('award-comment').value='';
   openPanel('panel-award');
 }
-function submitAward() {
-  var start   = document.getElementById('award-start').value;
-  var end     = document.getElementById('award-end').value;
-  var days    = document.getElementById('award-days').value;
-  var comment = document.getElementById('award-comment').value.trim();
-  if (!start||!end||!comment) { toast('Please fill all required fields','#EF4444'); return; }
-  var emp = getUser(awardTargetId);
-  var id  = uid();
-  var rec = { id:id, userId:awardTargetId, type:'Management Awarded Leave', start:start, end:end,
-    days:days, category:'Awarded', reason:'', awardComment:comment, status:'approved',
-    managerId:currentUser.id, createdAt:nowStr(), approvedAt:nowStr(), approvedBy:currentUser.id,
-    rejectedAt:'', rejectedBy:'', rejectReason:'', cover:'Not required' };
+function submitAward(){
+  var start=document.getElementById('award-start').value;
+  var end=document.getElementById('award-end').value;
+  var days=document.getElementById('award-days').value;
+  var comment=document.getElementById('award-comment').value.trim();
+  if(!start||!end||!comment){toast('Please fill all required fields','#EF4444');return;}
+  var emp=getUser(awardTargetId);var id=uid();
+  var rec={id:id,userId:awardTargetId,type:'Management Awarded Leave',start:start,end:end,
+    days:days,category:'Awarded',reason:'',awardComment:comment,status:'approved',
+    managerId:currentUser.id,createdAt:nowStr(),approvedAt:nowStr(),approvedBy:currentUser.id,
+    rejectedAt:'',rejectedBy:'',rejectReason:'',cover:'Not required'};
   leaves.unshift(rec);
   ensureBal(awardTargetId);
-  balancesMap[awardTargetId].awarded = parseFloat(balancesMap[awardTargetId].awarded||0) + parseFloat(days);
-  var scope = [awardTargetId, currentUser.id, 'admin1'];
+  balancesMap[awardTargetId].awarded=parseFloat(balancesMap[awardTargetId].awarded||0)+parseFloat(days);
+  var scope=[awardTargetId,currentUser.id,'admin1'];
   addAuditLocal('w','awarded',id,currentUser.name+' awarded '+days+'d leave to '+emp.name+' — '+comment,scope,'awarded');
-  api('upsertLeave', rec);
-  api('upsertBalance', balancesMap[awardTargetId]);
-  closePanel('panel-award'); toast('🏅 Leave awarded to '+emp.name,'#F59E0B'); renderContent();
+  api('upsertLeave',rec);api('upsertBalance',balancesMap[awardTargetId]);
+  closePanel('panel-award');toast('🏅 Leave awarded to '+emp.name,'#F59E0B');renderContent();
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────
-function renderAdmin() {
-  var pending = leaves.filter(function(l){ return l.status==='pending' && l.type!=='Management Awarded Leave'; });
-  document.getElementById('main-content').innerHTML =
-    '<div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
-    '<input class="search-input" placeholder="Search people…" oninput="filterAdmin(this.value)"></div>' +
-    '<div><button class="btn btn-ghost btn-full" onclick="openPanel(\'panel-csv\')">📂 Import via CSV</button></div>' +
-    '<div><div class="section-title" style="margin-bottom:8px">Roles & Permissions</div><div class="card" id="admin-user-list">'+renderAdminUsers('')+'</div></div>' +
-    '<div><div class="section-title" style="margin-bottom:8px">Leave Credits</div><div class="card">' +
-      PERSONAS.map(function(p){
-        ensureBal(p.id); var bal = getBal(p.id);
-        return '<div class="role-item"><div class="role-user">' +
-          '<div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>' +
-          '<div class="role-info"><div class="role-name">'+p.name+'</div>' +
-          '<div class="role-email">Ann:'+(bal.annual||0)+' · Sick:'+(bal.sick||0)+' · Per:'+(bal.personal||0)+' · Awd:'+(bal.awarded||0)+'</div></div></div>' +
-          '<div style="display:flex;gap:6px">' +
-            '<button class="btn btn-ghost btn-sm" onclick="openCreditEditor(\''+p.id+'\')">Edit</button>' +
-            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+p.id+'\')">Award</button>' +
-          '</div></div>';
-      }).join('') +
-    '</div></div>' +
-    '<div><div class="section-title" style="margin-bottom:8px">Pending Overrides</div><div class="card">' +
-      (pending.length === 0 ? '<div class="empty"><div class="empty-title">No pending items</div></div>' :
-        pending.map(function(l){
-          var emp=getUser(l.userId), mgr=getUser(l.managerId);
-          return '<div class="leave-item"><div class="leave-item-top"><div>' +
-            '<div class="leave-item-name">'+emp.name+'</div>' +
-            '<div class="leave-item-meta">'+fmt(l.start)+' · '+l.days+'d · via '+(mgr.name||'—')+'</div></div>'+typePill(l.type)+'</div>'+
-            (l.category?'<div class="leave-item-meta">📂 '+l.category+'</div>':'')+
-            '<div class="leave-item-actions">' +
-              '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\')">View</button>' +
-              '<button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button>' +
-              '<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button>' +
-            '</div></div>';
-        }).join('')) +
-    '</div></div>' +
-    '<div class="card" style="padding:10px 14px">' +
-      '<div class="audit-toggle" id="admin-audit-toggle" onclick="toggleAudit(\'admin-audit-toggle\',\'admin-audit-content\')">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
-        '<span>🕐 Admin Activity Log</span>' +
-        '<span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+auditLog.filter(function(a){ return a.scope && a.scope.indexOf('admin1')>=0; }).length+' entries</span>' +
-      '</div>' +
-      '<div class="audit-inline" id="admin-audit-content">'+auditEntriesHtml(auditLog.filter(function(a){ return a.scope && a.scope.indexOf('admin1')>=0; }))+'</div>' +
-      '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">' +
-        '<button class="btn btn-ghost btn-full btn-sm" onclick="openFullAuditPanel()">🔍 Full Log & Export</button>' +
-      '</div>' +
+function renderAdmin(){
+  var pending=leaves.filter(function(l){return l.status==='pending'&&l.type!=='Management Awarded Leave';});
+  // All requests filter
+  var allReqs=leaves.slice();
+  if(adminReqFilter.status!=='all') allReqs=allReqs.filter(function(l){return l.status===adminReqFilter.status;});
+  if(adminReqFilter.type!=='all')   allReqs=allReqs.filter(function(l){return l.type===adminReqFilter.type;});
+  if(adminReqFilter.person!=='all') allReqs=allReqs.filter(function(l){return l.userId===adminReqFilter.person;});
+  // Sort newest first
+  allReqs.sort(function(a,b){return a.createdAt<b.createdAt?1:-1;});
+
+  document.getElementById('main-content').innerHTML=
+    '<div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+    '<input class="search-input" placeholder="Search people…" oninput="filterAdmin(this.value)"></div>'+
+
+    // CSV
+    '<div><button class="btn btn-ghost btn-full" onclick="openPanel(\'panel-csv\')">📂 Import via CSV</button></div>'+
+
+    // Roles
+    '<div><div class="section-title" style="margin-bottom:8px">Roles & Permissions</div><div class="card" id="admin-user-list">'+renderAdminUsers('')+'</div></div>'+
+
+    // Credits
+    '<div><div class="section-title" style="margin-bottom:8px">Leave Credits</div><div class="card">'+
+      PERSONAS.map(function(p){ensureBal(p.id);var bal=getBal(p.id);return'<div class="role-item">'+
+        '<div class="role-user"><div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>'+
+        '<div class="role-info"><div class="role-name">'+p.name+'</div>'+
+        '<div class="role-email">Ann:'+(bal.annual||0)+' · Sick:'+(bal.sick||0)+' · Per:'+(bal.personal||0)+' · Awd:'+(bal.awarded||0)+'</div></div></div>'+
+        '<div style="display:flex;gap:6px">'+
+          '<button class="btn btn-ghost btn-sm" onclick="openCreditEditor(\''+p.id+'\')">Edit</button>'+
+          '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+p.id+'\')">Award</button>'+
+        '</div></div>';}).join('')+
+    '</div></div>'+
+
+    // ALL REQUESTS
+    '<div>'+
+      '<div class="section-title" style="margin-bottom:8px">All Requests</div>'+
+      '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">'+
+        // Status filter
+        '<div class="chip-row">'+
+          ['all','pending','approved','rejected','awarded'].map(function(s){
+            return '<div class="chip '+(adminReqFilter.status===s?'active':'')+'" onclick="setAdminReqFilter(\'status\',\''+s+'\')">'+s[0].toUpperCase()+s.slice(1)+'</div>';
+          }).join('')+
+        '</div>'+
+        // Person filter
+        '<select class="form-select" style="font-size:11px;padding:6px 10px" onchange="setAdminReqFilter(\'person\',this.value)">'+
+          '<option value="all">All Employees</option>'+
+          PERSONAS.map(function(p){return'<option value="'+p.id+'"'+(adminReqFilter.person===p.id?' selected':'')+'>'+p.name+'</option>';}).join('')+
+        '</select>'+
+        // Type filter
+        '<select class="form-select" style="font-size:11px;padding:6px 10px" onchange="setAdminReqFilter(\'type\',this.value)">'+
+          '<option value="all">All Leave Types</option>'+
+          Object.keys(LEAVE_TYPES).map(function(t){return'<option value="'+t+'"'+(adminReqFilter.type===t?' selected':'')+'>'+t+'</option>';}).join('')+
+        '</select>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">'+allReqs.length+' request'+(allReqs.length!==1?'s':'')+' found</div>'+
+      '<div class="card">'+
+        (allReqs.length===0?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No requests found</div></div>':
+          allReqs.map(function(l){
+            var emp=getUser(l.userId),mgr=getUser(l.managerId);
+            return '<div class="leave-item" onclick="openLeaveDetail(\''+l.id+'\')" style="cursor:pointer">'+
+              '<div class="leave-item-top">'+
+                '<div style="display:flex;align-items:center;gap:8px">'+
+                  '<div class="avatar" style="width:26px;height:26px;font-size:10px">'+emp.initials+'</div>'+
+                  '<div><div class="leave-item-name">'+emp.name+'</div><div class="leave-item-meta">'+fmt(l.start)+(l.days>1?' → '+fmt(l.end):'')+' · '+l.days+'d</div></div>'+
+                '</div>'+
+                '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'+typePill(l.type)+(l.type==='Management Awarded Leave'?statusBadge('awarded'):statusBadge(l.status))+'</div>'+
+              '</div>'+
+              (l.category?'<div class="leave-item-meta">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':'')+
+              (l.awardComment?'<div class="leave-item-meta">🏅 '+l.awardComment+'</div>':'')+
+            '</div>';
+          }).join(''))+
+      '</div>'+
+    '</div>'+
+
+    // Overrides
+    '<div><div class="section-title" style="margin-bottom:8px">Pending Overrides</div><div class="card">'+
+      (pending.length===0?'<div class="empty"><div class="empty-title">No pending items</div></div>':
+        pending.map(function(l){var emp=getUser(l.userId),mgr=getUser(l.managerId);return'<div class="leave-item">'+
+          '<div class="leave-item-top"><div><div class="leave-item-name">'+emp.name+'</div>'+
+          '<div class="leave-item-meta">'+fmt(l.start)+' · '+l.days+'d · via '+(mgr.name||'—')+'</div></div>'+typePill(l.type)+'</div>'+
+          (l.category?'<div class="leave-item-meta">📂 '+l.category+'</div>':'')+
+          '<div class="leave-item-actions">'+
+            '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\')">View</button>'+
+            '<button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button>'+
+            '<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button>'+
+          '</div></div>';}).join(''))+
+    '</div></div>'+
+
+    // Admin audit
+    '<div class="card" style="padding:10px 14px">'+
+      '<div class="audit-toggle" id="admin-audit-toggle" onclick="toggleAudit(\'admin-audit-toggle\',\'admin-audit-content\')">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'+
+        '<span>🕐 Admin Activity Log</span>'+
+        '<span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+auditLog.filter(function(a){return a.scope&&a.scope.indexOf('admin1')>=0;}).length+' entries</span>'+
+      '</div>'+
+      '<div class="audit-inline" id="admin-audit-content">'+auditEntriesHtml(auditLog.filter(function(a){return a.scope&&a.scope.indexOf('admin1')>=0;}))+'</div>'+
+      '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'+
+        '<button class="btn btn-ghost btn-full btn-sm" onclick="openFullAuditPanel()">🔍 Full Log & Export</button>'+
+      '</div>'+
     '</div>';
 }
-function renderAdminUsers(q) {
-  var list = q ? PERSONAS.filter(function(p){ return p.name.toLowerCase().indexOf(q.toLowerCase())>=0; }) : PERSONAS;
-  return list.map(function(p){
-    return '<div class="role-item"><div class="role-user">' +
-      '<div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>' +
-      '<div class="role-info"><div class="role-name">'+p.name+'</div><div class="role-email">'+p.dept+'</div></div></div>' +
-      '<div style="display:flex;gap:6px;align-items:center">' +
-        '<span class="role-badge" style="background:'+roleBadgeBg(p.role)+';color:var(--navy)">'+p.role+'</span>' +
-        '<button class="btn btn-ghost btn-sm" onclick="editRole(\''+p.id+'\')">Edit</button>' +
-      '</div></div>';
-  }).join('');
+
+function setAdminReqFilter(key,val){
+  adminReqFilter[key]=val;
+  renderAdmin();
 }
-function filterAdmin(q) { document.getElementById('admin-user-list').innerHTML = renderAdminUsers(q); }
-function editRole(id) {
-  var p = getUser(id);
-  var roles = ['employee','manager','admin'];
-  var old = p.role; p.role = roles[(roles.indexOf(p.role)+1)%roles.length];
+
+function renderAdminUsers(q){
+  var list=q?PERSONAS.filter(function(p){return p.name.toLowerCase().indexOf(q.toLowerCase())>=0;}):PERSONAS;
+  return list.map(function(p){return'<div class="role-item">'+
+    '<div class="role-user"><div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>'+
+    '<div class="role-info"><div class="role-name">'+p.name+'</div><div class="role-email">'+p.dept+'</div></div></div>'+
+    '<div style="display:flex;gap:6px;align-items:center">'+
+      '<span class="role-badge" style="background:'+roleBadgeBg(p.role)+';color:var(--navy)">'+p.role+'</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="editRole(\''+p.id+'\')">Edit</button>'+
+    '</div></div>';}).join('');
+}
+function filterAdmin(q){document.getElementById('admin-user-list').innerHTML=renderAdminUsers(q);}
+function editRole(id){
+  var p=getUser(id);var roles=['employee','manager','admin'];
+  var old=p.role;p.role=roles[(roles.indexOf(p.role)+1)%roles.length];
   addAuditLocal('e','role_edit',id,currentUser.name+' changed '+p.name+'\'s role from '+old+' to '+p.role,['admin1'],'admin');
-  api('upsertEmployee', p);
-  toast(p.name+' is now '+p.role,'#2E8EE8'); renderAdmin();
+  api('upsertEmployee',p);toast(p.name+' is now '+p.role,'#2E8EE8');renderAdmin();
 }
-function adminApproveLeave(id) {
-  var l=null; for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
-  if(!l)return; var emp=getUser(l.userId);
-  l.status='approved'; l.approvedAt=nowStr(); l.approvedBy=currentUser.id;
+function adminApproveLeave(id){
+  var l=null;for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}if(!l)return;
+  var emp=getUser(l.userId);
+  l.status='approved';l.approvedAt=nowStr();l.approvedBy=currentUser.id;
   addAuditLocal('a','admin_approved',id,currentUser.name+' force-approved '+l.type+' for '+emp.name,['admin1',l.userId,l.managerId],'approval');
-  api('upsertLeave',l); toast('Admin override: Approved ✓','#00C49F'); closePanel('panel-detail'); renderContent();
+  api('upsertLeave',l);toast('Admin override: Approved ✓','#00C49F');closePanel('panel-detail');renderContent();
 }
-function adminRejectLeave(id) {
-  var l=null; for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
-  if(!l)return; var emp=getUser(l.userId);
-  l.status='rejected'; l.rejectedAt=nowStr(); l.rejectedBy=currentUser.id;
+function adminRejectLeave(id){
+  var l=null;for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}if(!l)return;
+  var emp=getUser(l.userId);
+  l.status='rejected';l.rejectedAt=nowStr();l.rejectedBy=currentUser.id;
   addAuditLocal('r','admin_rejected',id,currentUser.name+' force-rejected '+l.type+' for '+emp.name,['admin1',l.userId,l.managerId],'rejection');
-  api('upsertLeave',l); toast('Admin override: Rejected','#EF4444'); closePanel('panel-detail'); renderContent();
+  api('upsertLeave',l);toast('Admin override: Rejected','#EF4444');closePanel('panel-detail');renderContent();
 }
 
 // ── CREDITS ───────────────────────────────────────────────────
-function openCreditEditor(userId) {
-  var p = getUser(userId); ensureBal(userId); var bal = getBal(userId);
-  creditTarget = userId;
-  document.getElementById('credits-title').textContent = 'Credits — '+p.name;
-  var types = [['Annual Leave','annual'],['Sick Leave','sick'],['Personal Leave','personal'],['Parental Leave','parental'],['Unpaid Leave','unpaid']];
-  document.getElementById('credits-content').innerHTML = '<div class="card">' +
-    types.map(function(t){
-      return '<div class="credit-row"><div class="credit-label">'+t[0]+'</div>' +
-        '<div style="display:flex;align-items:center;gap:6px">' +
-          '<span style="font-size:11px;color:var(--text-dim)">/ '+QUOTAS[t[1]]+'</span>' +
-          '<input class="credit-input" type="number" id="credit-'+t[1]+'" value="'+(bal[t[1]]||0)+'" min="0" step="0.5">' +
-        '</div></div>';
-    }).join('') + '</div>' +
+function openCreditEditor(userId){
+  var p=getUser(userId);ensureBal(userId);var bal=getBal(userId);
+  creditTarget=userId;
+  document.getElementById('credits-title').textContent='Credits — '+p.name;
+  var types=[['Annual Leave','annual'],['Sick Leave','sick'],['Personal Leave','personal'],['Parental Leave','parental'],['Unpaid Leave','unpaid']];
+  document.getElementById('credits-content').innerHTML='<div class="card">'+
+    types.map(function(t){return'<div class="credit-row"><div class="credit-label">'+t[0]+'</div>'+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+        '<span style="font-size:11px;color:var(--text-dim)">/ '+QUOTAS[t[1]]+'</span>'+
+        '<input class="credit-input" type="number" id="credit-'+t[1]+'" value="'+(bal[t[1]]||0)+'" min="0" step="0.5">'+
+      '</div></div>';}).join('')+'</div>'+
     '<div style="font-size:12px;color:var(--text-dim)">Changes will be logged in the audit trail.</div>';
   openPanel('panel-credits');
 }
-function saveCredits() {
-  if (!creditTarget) return;
-  var p = getUser(creditTarget); ensureBal(creditTarget); var bal = balancesMap[creditTarget];
-  var types = [['annual','Annual Leave'],['sick','Sick Leave'],['personal','Personal Leave'],['parental','Parental Leave'],['unpaid','Unpaid Leave']];
-  var changes = [];
+function saveCredits(){
+  if(!creditTarget)return;
+  var p=getUser(creditTarget);ensureBal(creditTarget);var bal=balancesMap[creditTarget];
+  var types=[['annual','Annual Leave'],['sick','Sick Leave'],['personal','Personal Leave'],['parental','Parental Leave'],['unpaid','Unpaid Leave']];
+  var changes=[];
   types.forEach(function(t){
-    var el = document.getElementById('credit-'+t[0]); if (!el) return;
-    var nv = parseFloat(el.value)||0;
-    if (nv !== parseFloat(bal[t[0]]||0)) { changes.push(t[1]+': '+(bal[t[0]]||0)+'→'+nv); bal[t[0]]=nv; }
+    var el=document.getElementById('credit-'+t[0]);if(!el)return;
+    var nv=parseFloat(el.value)||0;
+    if(nv!==parseFloat(bal[t[0]]||0)){changes.push(t[1]+': '+(bal[t[0]]||0)+'→'+nv);bal[t[0]]=nv;}
   });
-  if (changes.length) {
+  if(changes.length){
     addAuditLocal('c','credit_edit',creditTarget,currentUser.name+' updated credits for '+p.name+' — '+changes.join(', '),['admin1'],'admin');
-    api('upsertBalance', bal);
-    toast('Credits updated for '+p.name,'#C084FC');
+    api('upsertBalance',bal);toast('Credits updated for '+p.name,'#C084FC');
   } else toast('No changes made','#8FA3BA');
-  closePanel('panel-credits'); renderAdmin();
+  closePanel('panel-credits');renderAdmin();
 }
 
 // ── FULL AUDIT ────────────────────────────────────────────────
-function openFullAuditPanel() { renderFullAuditPanel(); openPanel('panel-fullaudit'); }
-function renderFullAuditPanel() {
-  var f = auditExportFilters;
-  var filtered = auditLog.filter(function(a){
-    if (f.type !== 'all' && a.type !== f.type) return false;
-    if (f.category !== 'all' && a.category !== f.category) return false;
-    if (f.dateFrom && a.at < f.dateFrom) return false;
-    if (f.dateTo   && a.at > f.dateTo+' 23:59') return false;
+function openFullAuditPanel(){renderFullAuditPanel();openPanel('panel-fullaudit');}
+function renderFullAuditPanel(){
+  var f=auditExportFilters;
+  var filtered=auditLog.filter(function(a){
+    if(f.type!=='all'&&a.type!==f.type)return false;
+    if(f.category!=='all'&&a.category!==f.category)return false;
+    if(f.dateFrom&&a.at<f.dateFrom)return false;
+    if(f.dateTo&&a.at>f.dateTo+' 23:59')return false;
     return true;
   });
-  var typeOpts = ['all','a','r','s','e','c','w'];
-  var typeLabels = {all:'All Types',a:'Approvals',r:'Rejections',s:'Submissions',e:'Role Edits',c:'Credits',w:'Awarded'};
-  var catOpts = ['all','approval','rejection','submission','admin','awarded'];
-  document.getElementById('fullaudit-content').innerHTML =
-    '<div style="display:flex;flex-direction:column;gap:10px">' +
-      '<div class="form-row">' +
-        '<div class="form-group"><label class="form-label">From Date</label><input type="date" class="form-input" value="'+f.dateFrom+'" onchange="auditExportFilters.dateFrom=this.value;renderFullAuditPanel()"></div>' +
-        '<div class="form-group"><label class="form-label">To Date</label><input type="date" class="form-input" value="'+f.dateTo+'" onchange="auditExportFilters.dateTo=this.value;renderFullAuditPanel()"></div>' +
-      '</div>' +
-      '<div class="form-row">' +
+  var typeOpts=['all','a','r','s','e','c','w'];
+  var typeLabels={all:'All Types',a:'Approvals',r:'Rejections',s:'Submissions',e:'Role Edits',c:'Credits',w:'Awarded'};
+  var catOpts=['all','approval','rejection','submission','admin','awarded'];
+  document.getElementById('fullaudit-content').innerHTML=
+    '<div style="display:flex;flex-direction:column;gap:10px">'+
+      '<div class="form-row">'+
+        '<div class="form-group"><label class="form-label">From Date</label><input type="date" class="form-input" value="'+f.dateFrom+'" onchange="auditExportFilters.dateFrom=this.value;renderFullAuditPanel()"></div>'+
+        '<div class="form-group"><label class="form-label">To Date</label><input type="date" class="form-input" value="'+f.dateTo+'" onchange="auditExportFilters.dateTo=this.value;renderFullAuditPanel()"></div>'+
+      '</div>'+
+      '<div class="form-row">'+
         '<div class="form-group"><label class="form-label">Action Type</label><select class="form-select" onchange="auditExportFilters.type=this.value;renderFullAuditPanel()">'+
-          typeOpts.map(function(v){ return '<option value="'+v+'"'+(f.type===v?' selected':'')+'>'+typeLabels[v]+'</option>'; }).join('') +
-        '</select></div>' +
+          typeOpts.map(function(v){return'<option value="'+v+'"'+(f.type===v?' selected':'')+'>'+typeLabels[v]+'</option>';}).join('')+
+        '</select></div>'+
         '<div class="form-group"><label class="form-label">Category</label><select class="form-select" onchange="auditExportFilters.category=this.value;renderFullAuditPanel()">'+
-          catOpts.map(function(v){ return '<option value="'+v+'"'+(f.category===v?' selected':'')+'>'+v[0].toUpperCase()+v.slice(1)+'</option>'; }).join('') +
-        '</select></div>' +
-      '</div>' +
-      '<div style="font-size:11px;color:var(--text-dim)">'+filtered.length+' entries matching filters</div>' +
-    '</div>' +
+          catOpts.map(function(v){return'<option value="'+v+'"'+(f.category===v?' selected':'')+'>'+v[0].toUpperCase()+v.slice(1)+'</option>';}).join('')+
+        '</select></div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text-dim)">'+filtered.length+' entries matching filters</div>'+
+    '</div>'+
     '<div class="card">'+
       (filtered.length===0?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No entries</div></div>':
-        filtered.map(function(a){
-          return '<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>' +
-            '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+' · '+(a.category||'')+'</div></div></div>';
-        }).join(''))+
+        filtered.map(function(a){return'<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>'+
+          '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+' · '+(a.category||'')+'</div></div></div>';}).join(''))+
     '</div>';
 }
-function exportAuditCSV() {
-  var f = auditExportFilters;
-  var filtered = auditLog.filter(function(a){
-    if (f.type !== 'all' && a.type !== f.type) return false;
-    if (f.category !== 'all' && a.category !== f.category) return false;
-    if (f.dateFrom && a.at < f.dateFrom) return false;
-    if (f.dateTo   && a.at > f.dateTo+' 23:59') return false;
+function exportAuditCSV(){
+  var f=auditExportFilters;
+  var filtered=auditLog.filter(function(a){
+    if(f.type!=='all'&&a.type!==f.type)return false;
+    if(f.category!=='all'&&a.category!==f.category)return false;
+    if(f.dateFrom&&a.at<f.dateFrom)return false;
+    if(f.dateTo&&a.at>f.dateTo+' 23:59')return false;
     return true;
   });
-  var hdr = ['ID','Action','User','Target','Detail','Timestamp','Category'];
-  var rows = filtered.map(function(a){
-    return [a.id, a.action, getUser(a.userId).name||a.userId, a.targetId, '"'+a.detail.replace(/"/g,'""')+'"', a.at, a.category||''].join(',');
-  });
-  var csv = [hdr.join(',')].concat(rows).join('\n');
-  var blob = new Blob([csv],{type:'text/csv'});
-  var url  = URL.createObjectURL(blob);
-  var el   = document.createElement('a'); el.href=url; el.download='leaveflow_audit.csv'; el.click();
-  URL.revokeObjectURL(url);
-  toast('Audit log exported ✓','#00C49F');
+  var hdr=['ID','Action','User','Target','Detail','Timestamp','Category'];
+  var rows=filtered.map(function(a){return[a.id,a.action,getUser(a.userId).name||a.userId,a.targetId,'"'+a.detail.replace(/"/g,'""')+'"',a.at,a.category||''].join(',');});
+  var csv=[hdr.join(',')].concat(rows).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var el=document.createElement('a');el.href=url;el.download='leaveflow_audit.csv';el.click();
+  URL.revokeObjectURL(url);toast('Audit log exported ✓','#00C49F');
 }
 
 // ── INLINE AUDIT ──────────────────────────────────────────────
-function auditEntriesHtml(entries) {
-  if (!entries.length) return '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">No activity yet.</div>';
-  return entries.map(function(a){
-    return '<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>' +
-      '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+'</div></div></div>';
-  }).join('');
+function auditEntriesHtml(entries){
+  if(!entries.length)return'<div style="font-size:12px;color:var(--text-dim);padding:10px 0">No activity yet.</div>';
+  return entries.map(function(a){return'<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>'+
+    '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+'</div></div></div>';}).join('');
 }
-function inlineAuditSection(filterFn, toggleId, contentId, label) {
-  var entries = auditLog.filter(filterFn);
-  return '<div class="card" style="padding:10px 14px">' +
-    '<div class="audit-toggle" id="'+toggleId+'" onclick="toggleAudit(\''+toggleId+'\',\''+contentId+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
-    '<span>'+label+'</span><span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+entries.length+' entries</span></div>' +
+function inlineAuditSection(filterFn,toggleId,contentId,label){
+  var entries=auditLog.filter(filterFn);
+  return'<div class="card" style="padding:10px 14px">'+
+    '<div class="audit-toggle" id="'+toggleId+'" onclick="toggleAudit(\''+toggleId+'\',\''+contentId+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'+
+    '<span>'+label+'</span><span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+entries.length+' entries</span></div>'+
     '<div class="audit-inline" id="'+contentId+'">'+auditEntriesHtml(entries)+'</div></div>';
 }
-function toggleAudit(toggleId, contentId) {
+function toggleAudit(toggleId,contentId){
   document.getElementById(toggleId).classList.toggle('open');
   document.getElementById(contentId).classList.toggle('open');
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────────
-function csvDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('over')}
-function csvDragLeave(){document.getElementById('drop-zone').classList.remove('over')}
-function csvDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('over');var f=e.dataTransfer.files[0];if(f)parseCSV(f)}
-function csvFileSelected(e){var f=e.target.files[0];if(f)parseCSV(f)}
-function parseCSV(file) {
-  var r = new FileReader();
-  r.onload = function(ev){
-    var lines = ev.target.result.trim().split('\n').filter(function(l){return l.trim();});
-    if (lines.length < 2) { toast('CSV must have a header and at least one row','#EF4444'); return; }
-    var hdr = lines[0].split(',').map(function(h){return h.trim().toLowerCase().replace(/['"]/g,'');});
-    csvParsed = lines.slice(1).map(function(line){
-      var vals = line.split(',').map(function(v){return v.trim().replace(/^["']|["']$/g,'');});
-      var obj = {}; hdr.forEach(function(h,i){obj[h]=vals[i]||'';});
-      return obj;
+function csvDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('over');}
+function csvDragLeave(){document.getElementById('drop-zone').classList.remove('over');}
+function csvDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('over');var f=e.dataTransfer.files[0];if(f)parseCSV(f);}
+function csvFileSelected(e){var f=e.target.files[0];if(f)parseCSV(f);}
+function parseCSV(file){
+  var r=new FileReader();
+  r.onload=function(ev){
+    var lines=ev.target.result.trim().split('\n').filter(function(l){return l.trim();});
+    if(lines.length<2){toast('CSV must have a header and at least one row','#EF4444');return;}
+    var hdr=lines[0].split(',').map(function(h){return h.trim().toLowerCase().replace(/['"]/g,'');});
+    csvParsed=lines.slice(1).map(function(line){
+      var vals=line.split(',').map(function(v){return v.trim().replace(/^["']|["']$/g,'');});
+      var obj={};hdr.forEach(function(h,i){obj[h]=vals[i]||'';});return obj;
     }).filter(function(r){return r.id&&r.name&&r.role;});
     showCSVPreview();
-  };
-  r.readAsText(file);
+  };r.readAsText(file);
 }
-function showCSVPreview() {
-  var adds    = csvParsed.filter(function(r){return !PERSONAS.find(function(p){return p.id===r.id;});});
-  var updates = csvParsed.filter(function(r){return  PERSONAS.find(function(p){return p.id===r.id;});});
-  document.getElementById('csv-preview').innerHTML =
-    '<div style="font-size:12px;color:var(--text-dim);margin:10px 0"><strong style="color:var(--mint)">'+adds.length+'</strong> new · <strong style="color:var(--amber)">'+updates.length+'</strong> updates</div>' +
-    '<div class="card" style="overflow-x:auto">' +
-      '<div class="preview-row"><span class="preview-cell preview-head">ID</span><span class="preview-cell preview-head">Name</span><span class="preview-cell preview-head">Role</span><span class="preview-cell preview-head">Action</span></div>' +
-      csvParsed.map(function(r){
-        var ex = PERSONAS.find(function(p){return p.id===r.id;});
-        return '<div class="preview-row"><span class="preview-cell">'+r.id+'</span><span class="preview-cell">'+r.name+'</span><span class="preview-cell">'+r.role+'</span><span class="preview-cell" style="color:'+(ex?'var(--amber)':'var(--mint)')+')">'+(ex?'Update':'Add')+'</span></div>';
-      }).join('') +
+function showCSVPreview(){
+  var adds=csvParsed.filter(function(r){return!PERSONAS.find(function(p){return p.id===r.id;});});
+  var updates=csvParsed.filter(function(r){return PERSONAS.find(function(p){return p.id===r.id;});});
+  document.getElementById('csv-preview').innerHTML=
+    '<div style="font-size:12px;color:var(--text-dim);margin:10px 0"><strong style="color:var(--mint)">'+adds.length+'</strong> new · <strong style="color:var(--amber)">'+updates.length+'</strong> updates</div>'+
+    '<div class="card" style="overflow-x:auto">'+
+      '<div class="preview-row"><span class="preview-cell preview-head">ID</span><span class="preview-cell preview-head">Name</span><span class="preview-cell preview-head">Role</span><span class="preview-cell preview-head">Action</span></div>'+
+      csvParsed.map(function(r){var ex=PERSONAS.find(function(p){return p.id===r.id;});
+        return'<div class="preview-row"><span class="preview-cell">'+r.id+'</span><span class="preview-cell">'+r.name+'</span><span class="preview-cell">'+r.role+'</span><span class="preview-cell" style="color:'+(ex?'var(--amber)':'var(--mint)')+')">'+(ex?'Update':'Add')+'</span></div>';
+      }).join('')+
     '</div>';
-  document.getElementById('csv-footer').innerHTML =
-    '<button class="btn btn-ghost" style="flex:1" onclick="closePanel(\'panel-csv\')">Cancel</button>' +
+  document.getElementById('csv-footer').innerHTML=
+    '<button class="btn btn-ghost" style="flex:1" onclick="closePanel(\'panel-csv\')">Cancel</button>'+
     '<button class="btn btn-primary" style="flex:2" onclick="confirmCSVImport()">Confirm Import</button>';
 }
-function confirmCSVImport() {
-  var added=0, updated=0;
-  var apiRows = [];
+function confirmCSVImport(){
+  var added=0,updated=0,apiRows=[];
   csvParsed.forEach(function(row){
-    var nm = row.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var ex = null;
-    for (var i=0;i<PERSONAS.length;i++){if(PERSONAS[i].id===row.id){ex=PERSONAS[i];break;}}
-    if (ex) {
-      ex.name=row.name; ex.role=row.role; ex.dept=row.department||ex.dept;
-      ex.manager=row.manager_id||ex.manager; ex.google_email=row.google_email||ex.google_email; ex.initials=nm;
-      apiRows.push(ex); updated++;
-    } else {
-      var p={id:row.id,name:row.name,initials:nm,role:row.role,dept:row.department||'',manager:row.manager_id||'',google_email:row.google_email||''};
-      PERSONAS.push(p); ensureBal(row.id); apiRows.push(p); added++;
-    }
+    var nm=row.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var ex=null;for(var i=0;i<PERSONAS.length;i++){if(PERSONAS[i].id===row.id){ex=PERSONAS[i];break;}}
+    if(ex){ex.name=row.name;ex.role=row.role;ex.dept=row.department||ex.dept;ex.manager=row.manager_id||ex.manager;ex.google_email=row.google_email||ex.google_email;ex.initials=nm;apiRows.push(ex);updated++;}
+    else{var p={id:row.id,name:row.name,initials:nm,role:row.role,dept:row.department||'',manager:row.manager_id||'',google_email:row.google_email||''};PERSONAS.push(p);ensureBal(row.id);apiRows.push(p);added++;}
   });
   addAuditLocal('u','csv_import','bulk',currentUser.name+' imported CSV — '+added+' added, '+updated+' updated',['admin1'],'admin');
-  api('importEmployees', { rows: apiRows });
+  api('importEmployees',{rows:apiRows});
   toast('Imported: '+added+' added, '+updated+' updated','#00C49F');
-  csvParsed=[]; closePanel('panel-csv'); renderAdmin();
+  csvParsed=[];closePanel('panel-csv');renderAdmin();
 }
 </script>
 </body>
