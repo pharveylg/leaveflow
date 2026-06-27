@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeaveFlow</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1B2D;--navy-mid:#1A2E47;--navy-dim:#243B55;
+  --sky:#2E8EE8;--sky-dim:#1B6DBF;--mint:#00C49F;
+  --amber:#F59E0B;--rose:#EF4444;--violet:#A855F7;--slate:#8FA3BA;
+  --mist:#C8D8E8;--white:#F5F9FF;--surface:#162236;
+  --card:#1E3150;--border:#2A4268;--text:#D4E5F7;--text-dim:#7A9BBF;
+  --mono:'DM Mono',monospace;--sans:'Inter',sans-serif;--r:10px;--r-sm:6px;
+}
+html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5}
+.app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--navy);position:relative;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.topbar-logo{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-.3px}
+.topbar-logo span{color:var(--sky)}
+.topbar-user{display:flex;align-items:center;gap:8px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--mint));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0}
+.topbar-name{font-size:12px;font-weight:500;color:var(--text-dim)}
+.role-badge{font-size:10px;font-family:var(--mono);background:var(--sky);color:var(--navy);border-radius:4px;padding:1px 5px;font-weight:500}
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;transition:color .15s;color:var(--text-dim);font-size:10px;font-weight:500;border-top:2px solid transparent}
+.nav-tab.active{color:var(--sky);border-top-color:var(--sky)}
+.nav-tab svg{width:18px;height:18px}
+.content{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.content::-webkit-scrollbar{width:0}
+.section-title{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;font-family:var(--mono);border-radius:20px;padding:2px 8px}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
+.badge-pending{background:rgba(245,158,11,.12);color:var(--amber)}
+.badge-approved{background:rgba(0,196,159,.12);color:var(--mint)}
+.badge-rejected{background:rgba(239,68,68,.12);color:var(--rose)}
+.badge-awarded{background:rgba(168,85,247,.12);color:var(--violet)}
+.type-pill{font-size:10px;font-weight:500;border-radius:4px;padding:2px 6px;font-family:var(--mono)}
+.type-annual{background:rgba(46,142,232,.15);color:#79C0FF}
+.type-sick{background:rgba(239,68,68,.15);color:#FF8080}
+.type-personal{background:rgba(168,85,247,.15);color:#C084FC}
+.type-parental{background:rgba(0,196,159,.15);color:var(--mint)}
+.type-unpaid{background:rgba(143,163,186,.15);color:var(--slate)}
+.type-awarded{background:rgba(245,158,11,.15);color:var(--amber)}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;font-weight:500;color:var(--mist)}
+.form-label span{color:var(--rose);margin-left:2px}
+.form-input,.form-select,.form-textarea{background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--white);font-family:var(--sans);font-size:13px;padding:10px 12px;width:100%;transition:border-color .15s;outline:none;-webkit-appearance:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--sky)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-dim)}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238FA3BA' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+.form-textarea{min-height:80px;resize:none;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-hint{font-size:11px;color:var(--text-dim)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:var(--r-sm);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;padding:10px 16px}
+.btn-primary{background:var(--sky);color:var(--navy)}.btn-primary:hover{background:var(--sky-dim)}
+.btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--mist);color:var(--white)}
+.btn-approve{background:rgba(0,196,159,.15);color:var(--mint);border:1px solid rgba(0,196,159,.3)}.btn-approve:hover{background:rgba(0,196,159,.25)}
+.btn-reject{background:rgba(239,68,68,.12);color:var(--rose);border:1px solid rgba(239,68,68,.3)}.btn-reject:hover{background:rgba(239,68,68,.22)}
+.btn-violet{background:rgba(168,85,247,.15);color:var(--violet);border:1px solid rgba(168,85,247,.3)}.btn-violet:hover{background:rgba(168,85,247,.25)}
+.btn-sm{font-size:11px;padding:6px 10px}
+.btn-full{width:100%}
+.leave-item{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}
+.leave-item:last-child{border-bottom:none;padding-bottom:0}
+.leave-item-top{display:flex;align-items:flex-start;justify-content:space-between}
+.leave-item-name{font-size:13px;font-weight:600;color:var(--white)}
+.leave-item-meta{font-size:11px;color:var(--text-dim);margin-top:2px}
+.leave-item-dates{font-size:12px;color:var(--mist);font-family:var(--mono)}
+.leave-item-actions{display:flex;gap:6px;flex-wrap:wrap}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-value{font-size:26px;font-weight:700;color:var(--white);font-family:var(--mono);line-height:1}
+.stat-label{font-size:11px;color:var(--text-dim);margin-top:4px}
+.balance-bar{background:var(--navy-mid);border-radius:4px;height:6px;overflow:hidden;margin-top:6px}
+.balance-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--sky),var(--mint))}
+.timeline{display:flex;flex-direction:column}
+.tl-item{display:flex;gap:10px}
+.tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--sky);margin-top:4px;flex-shrink:0}
+.tl-dot.done{background:var(--mint)}.tl-dot.pending{background:var(--amber)}.tl-dot.rejected{background:var(--rose)}
+.tl-connector{width:1px;background:var(--border);flex:1;margin:2px 0;min-height:16px}
+.tl-body{padding-bottom:14px}
+.tl-label{font-size:12px;font-weight:600;color:var(--white)}
+.tl-meta{font-size:11px;color:var(--text-dim)}
+.audit-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.audit-item:last-child{border-bottom:none}
+.audit-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-top:1px}
+.audit-icon.a{background:rgba(0,196,159,.15)}.audit-icon.r{background:rgba(239,68,68,.12)}
+.audit-icon.s{background:rgba(46,142,232,.12)}.audit-icon.e{background:rgba(245,158,11,.12)}
+.audit-icon.c{background:rgba(168,85,247,.15)}.audit-icon.w{background:rgba(245,158,11,.15)}
+.audit-icon.u{background:rgba(46,142,232,.15)}
+.audit-text{font-size:12px;color:var(--text);line-height:1.4}
+.audit-time{font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-top:2px}
+.role-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.role-item:last-child{border-bottom:none}
+.role-user{display:flex;align-items:center;gap:10px}
+.role-info{font-size:12px}
+.role-name{color:var(--white);font-weight:500}
+.role-email{color:var(--text-dim);font-size:11px}
+.chip-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.chip-row::-webkit-scrollbar{height:0}
+.chip{background:var(--navy-mid);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all .15s}
+.chip.active{background:rgba(46,142,232,.15);border-color:var(--sky);color:var(--sky)}
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:13px;color:var(--white);display:flex;align-items:center;gap:8px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:360px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.panel{position:absolute;inset:0;background:var(--navy);z-index:50;display:none;flex-direction:column}
+.panel.active{display:flex}
+.panel-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-size:15px;font-weight:600;color:var(--white)}
+.panel-back{background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px;display:flex}
+.panel-content{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.panel-footer{padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);width:14px;height:14px}
+.search-input{background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--white);font-family:var(--sans);font-size:13px;padding:9px 12px 9px 32px;width:100%;outline:none}
+.search-input:focus{border-color:var(--sky)}
+.search-input::placeholder{color:var(--text-dim)}
+.empty{text-align:center;padding:36px 16px;color:var(--text-dim)}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty-title{font-size:14px;font-weight:600;color:var(--mist);margin-bottom:4px}
+.divider{height:1px;background:var(--border)}
+.hbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.hbar-label{font-size:11px;color:var(--text-dim);width:64px;flex-shrink:0}
+.hbar-track{flex:1;background:var(--navy-mid);border-radius:4px;height:8px}
+.hbar-fill{height:100%;border-radius:4px}
+.hbar-val{font-size:11px;color:var(--mist);font-family:var(--mono);width:24px;text-align:right}
+.bubble{background:var(--amber);color:var(--navy);border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;position:absolute;top:4px;right:calc(50% - 18px)}
+.audit-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--sky);padding:8px 0;user-select:none}
+.audit-toggle svg{width:14px;height:14px;transition:transform .2s;flex-shrink:0}
+.audit-toggle.open svg{transform:rotate(90deg)}
+.audit-inline{display:none;margin-top:4px}
+.audit-inline.open{display:block}
+.credit-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+.credit-row:last-child{border-bottom:none}
+.credit-label{font-size:12px;color:var(--white);flex:1}
+.credit-input{background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--white);font-family:var(--mono);font-size:13px;padding:6px 10px;width:64px;outline:none;text-align:center}
+.credit-input:focus{border-color:var(--sky)}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--r);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--navy-mid)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--sky)}
+.drop-zone-icon{font-size:28px;margin-bottom:8px}
+.drop-zone-text{font-size:13px;color:var(--text-dim)}
+.preview-row{display:flex;gap:6px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px}
+.preview-row:last-child{border-bottom:none}
+.preview-cell{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-head{color:var(--text-dim);font-weight:600}
+/* Login screen */
+.login-screen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:999;padding:32px}
+.login-logo{font-size:28px;font-weight:700;color:var(--white)}.login-logo span{color:var(--sky)}
+.login-sub{font-size:13px;color:var(--text-dim);text-align:center;max-width:280px}
+.login-error{font-size:12px;color:var(--rose);text-align:center;display:none}
+/* Loader */
+.loader{position:fixed;inset:0;background:rgba(15,27,45,.85);display:flex;align-items:center;justify-content:center;z-index:998;display:none}
+.loader.show{display:flex}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-logo">Leave<span>Flow</span></div>
+  <div class="login-sub">Sign in with your Google account to access your leave dashboard.</div>
+  <div id="g_id_onload"
+    data-client_id="YOUR_GOOGLE_CLIENT_ID"
+    data-callback="handleGoogleSignIn"
+    data-auto_select="true"
+    data-use_fedcm_for_prompt="true">
+  </div>
+  <div class="g_id_signin"
+    data-type="standard"
+    data-shape="rectangular"
+    data-theme="outline"
+    data-text="sign_in_with"
+    data-size="large"
+    data-logo_alignment="left">
+  </div>
+  <div class="login-error" id="login-error"></div>
+</div>
+
+<!-- Loader -->
+<div class="loader" id="loader"><div class="spinner"></div></div>
+
+<!-- App Shell -->
+<div class="app" id="app" style="display:none">
+  <div class="topbar">
+    <div class="topbar-logo">Leave<span>Flow</span></div>
+    <div class="topbar-user" onclick="showUserMenu()">
+      <div>
+        <div class="topbar-name" id="topbar-name"></div>
+        <div style="text-align:right;margin-top:2px"><span class="role-badge" id="topbar-role"></span></div>
+      </div>
+      <div class="avatar" id="topbar-avatar"></div>
+    </div>
+  </div>
+  <div class="content" id="main-content"></div>
+  <nav class="nav" id="bottom-nav"></nav>
+
+  <!-- Panels -->
+  <div class="panel" id="panel-newleave">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-newleave')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title">Request Leave</span>
+    </div>
+    <div class="panel-content">
+      <div class="form-group"><label class="form-label">Leave Type <span>*</span></label>
+        <select class="form-select" id="leave-type">
+          <option value="">Select type…</option>
+          <option>Annual Leave</option><option>Sick Leave</option>
+          <option>Personal Leave</option><option>Parental Leave</option><option>Unpaid Leave</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Start Date <span>*</span></label><input type="date" class="form-input" id="leave-start"></div>
+        <div class="form-group"><label class="form-label">End Date <span>*</span></label><input type="date" class="form-input" id="leave-end"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Days <span>*</span></label>
+        <input type="number" class="form-input" value="1" min="0.5" step="0.5" id="leave-days">
+        <div class="form-hint">Half-day increments allowed</div>
+      </div>
+      <div class="form-group"><label class="form-label">Reason Category <span>*</span></label>
+        <select class="form-select" id="leave-category">
+          <option value="">Select category…</option>
+          <option>Medical</option><option>Family</option><option>Travel</option>
+          <option>Personal</option><option>Emergency</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Additional Remarks</label>
+        <textarea class="form-textarea" id="leave-reason" placeholder="Optional context for your manager…"></textarea>
+      </div>
+      <div class="form-group"><label class="form-label">Cover Arranged</label>
+        <select class="form-select" id="leave-cover">
+          <option>Not required</option><option>Yes – covered by team</option><option>Pending arrangement</option>
+        </select>
+      </div>
+      <div class="card" style="background:var(--navy-mid)" id="nl-balance-card"></div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePanel('panel-newleave')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitLeave()">Submit Request</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-award">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-award')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title" id="award-title">Award Leave</span>
+    </div>
+    <div class="panel-content">
+      <div class="card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)">
+        <div style="font-size:12px;color:var(--amber)">⚠ Management Awarded Leave is granted directly as approved and bypasses the normal workflow.</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Start Date <span>*</span></label><input type="date" class="form-input" id="award-start"></div>
+        <div class="form-group"><label class="form-label">End Date <span>*</span></label><input type="date" class="form-input" id="award-end"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Days <span>*</span></label><input type="number" class="form-input" value="1" min="0.5" step="0.5" id="award-days"></div>
+      <div class="form-group"><label class="form-label">Approval Source / Comment <span>*</span></label>
+        <textarea class="form-textarea" id="award-comment" placeholder="e.g. Approved by CEO (ref: email 24 Jun 2026)…"></textarea>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePanel('panel-award')">Cancel</button>
+      <button class="btn btn-violet" style="flex:2" onclick="submitAward()">Grant Leave</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-detail">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-detail')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title" id="detail-title">Leave Details</span>
+    </div>
+    <div class="panel-content" id="detail-content"></div>
+    <div class="panel-footer" id="detail-footer"></div>
+  </div>
+
+  <div class="panel" id="panel-credits">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-credits')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title" id="credits-title">Edit Leave Credits</span>
+    </div>
+    <div class="panel-content" id="credits-content"></div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePanel('panel-credits')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveCredits()">Save Credits</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-csv">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-csv')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title">Import Employees (CSV)</span>
+    </div>
+    <div class="panel-content" id="csv-content">
+      <div class="card" style="background:rgba(46,142,232,.06);border-color:rgba(46,142,232,.25)">
+        <div style="font-size:12px;color:var(--sky);font-weight:600;margin-bottom:6px">Expected CSV columns</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.8">id, name, role, department, manager_id, google_email</div>
+      </div>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()" ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
+        <div class="drop-zone-icon">📂</div>
+        <div class="drop-zone-text">Click or drag & drop CSV file</div>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="csvFileSelected(event)">
+      <div id="csv-preview"></div>
+    </div>
+    <div class="panel-footer" id="csv-footer">
+      <button class="btn btn-ghost btn-full" onclick="closePanel('panel-csv')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-fullaudit">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-fullaudit')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title">Full Audit Log</span>
+    </div>
+    <div class="panel-content" id="fullaudit-content"></div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePanel('panel-fullaudit')">Close</button>
+      <button class="btn btn-primary" style="flex:1" onclick="exportAuditCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-usermenu">
+    <div class="panel-header">
+      <button class="panel-back" onclick="closePanel('panel-usermenu')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="panel-title">Account</span>
+    </div>
+    <div class="panel-content" id="usermenu-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+var SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbyaWLMuXeSEuEIN1BUh8l6V4NVhGiYbK-tO_eahyM_eEl7EUl9mMtPHExq2SRIOzGFR/exec';
+var GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // ← paste OAuth Client ID here
+
+// ── STATE ─────────────────────────────────────────────────────
+var currentUser  = null;   // matched employee record
+var googleEmail  = null;   // raw Google email
+var PERSONAS     = [];
+var leaves       = [];
+var balancesMap  = {};     // keyed by userId
+var auditLog     = [];
+var currentTab   = 'my';
+var leaveFilter  = 'all';
+var awardTargetId = null;
+var creditTarget  = null;
+var csvParsed     = [];
+var auditExportFilters = { type:'all', category:'all', dateFrom:'', dateTo:'' };
+
+var QUOTAS = { annual:20, sick:10, personal:5, parental:90, unpaid:30, awarded:999 };
+var LEAVE_TYPES = {
+  'Annual Leave':'annual','Sick Leave':'sick','Personal Leave':'personal',
+  'Parental Leave':'parental','Unpaid Leave':'unpaid','Management Awarded Leave':'awarded'
+};
+var AUDIT_ICONS = { a:'✓', r:'✕', s:'↑', e:'✎', c:'₵', w:'🏅', u:'↑' };
+
+// ── GOOGLE SIGN-IN ────────────────────────────────────────────
+function handleGoogleSignIn(response) {
+  var payload = parseJwt(response.credential);
+  googleEmail = payload.email;
+  showLoader(true);
+  api('whoami', null, 'GET').then(function(res) {
+    if (res.matched) {
+      currentUser = res.user;
+      loadAppData();
+    } else {
+      showLoader(false);
+      showLoginError('Your Google account (' + googleEmail + ') is not linked to an employee record. Please contact your administrator.');
+    }
+  }).catch(function(err) {
+    showLoader(false);
+    showLoginError('Connection error. Please try again.');
+  });
+}
+
+function parseJwt(token) {
+  var base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+  return JSON.parse(atob(base64));
+}
+
+function showLoginError(msg) {
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showLoader(on) {
+  document.getElementById('loader').className = on ? 'loader show' : 'loader';
+}
+
+// ── API ───────────────────────────────────────────────────────
+function api(action, data, method) {
+  method = method || 'POST';
+  var url = SCRIPT_URL + '?action=' + action;
+  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
+  if (method === 'POST' && data) opts.body = JSON.stringify(data);
+  if (method === 'GET') url += (data ? '&' + objToParams(data) : '');
+  return fetch(url, opts).then(function(r) { return r.json(); });
+}
+
+function objToParams(obj) {
+  return Object.keys(obj).map(function(k){ return k+'='+encodeURIComponent(obj[k]); }).join('&');
+}
+
+function loadAppData() {
+  Promise.all([
+    api('getEmployees', null, 'GET'),
+    api('getLeaves',    null, 'GET'),
+    api('getBalances',  null, 'GET'),
+    api('getAuditLog',  null, 'GET')
+  ]).then(function(results) {
+    PERSONAS = results[0] || [];
+    leaves   = results[1] || [];
+    // Build balances map
+    balancesMap = {};
+    (results[2] || []).forEach(function(b) { balancesMap[b.userId] = b; });
+    auditLog = results[3] || [];
+    // Parse scope back from pipe-separated string
+    auditLog.forEach(function(a) {
+      if (typeof a.scope === 'string') a.scope = a.scope.split('|');
+    });
+    showLoader(false);
+    bootApp();
+  }).catch(function(err) {
+    showLoader(false);
+    showLoginError('Failed to load data. Please refresh.');
+  });
+}
+
+function bootApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateTopbar();
+  renderNav();
+  renderContent();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function getUser(id) {
+  for (var i = 0; i < PERSONAS.length; i++) {
+    if (PERSONAS[i].id === id) return PERSONAS[i];
+  }
+  return { name:'Unknown', initials:'?', dept:'', role:'employee', id:id };
+}
+function getBal(uid) {
+  return balancesMap[uid] || { annual:0, sick:0, personal:0, parental:0, unpaid:0, awarded:0 };
+}
+function ensureBal(uid) {
+  if (!balancesMap[uid]) balancesMap[uid] = { userId:uid, annual:0, sick:0, personal:0, parental:0, unpaid:0, awarded:0 };
+}
+function fmt(d) {
+  if (!d) return '—';
+  var x = new Date(d.replace(' ','T'));
+  return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function fmtTs(ts) {
+  if (!ts) return '';
+  var x = new Date(ts.replace(' ','T'));
+  return x.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+function typeClass(t) { return LEAVE_TYPES[t] || 'annual'; }
+function statusBadge(s) {
+  var cls = s==='approved'?'approved':s==='rejected'?'rejected':s==='awarded'?'awarded':'pending';
+  return '<span class="badge badge-'+cls+'">'+s+'</span>';
+}
+function typePill(t) { return '<span class="type-pill type-'+typeClass(t)+'">'+t+'</span>'; }
+function nowStr() {
+  var d = new Date();
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function pad(n) { return n < 10 ? '0'+n : ''+n; }
+function uid() { return 'L'+Date.now().toString().slice(-6); }
+function toast(msg, color) {
+  color = color || '#00C49F';
+  document.getElementById('toast-dot').style.background = color;
+  document.getElementById('toast-msg').textContent = msg;
+  var t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+function openPanel(id) { document.getElementById(id).classList.add('active'); }
+function closePanel(id) { document.getElementById(id).classList.remove('active'); }
+
+function getAllReports(userId, visited) {
+  visited = visited || {};
+  if (visited[userId]) return [];
+  visited[userId] = true;
+  var out = [];
+  for (var i = 0; i < PERSONAS.length; i++) {
+    if (PERSONAS[i].manager === userId) {
+      out.push(PERSONAS[i]);
+      var sub = getAllReports(PERSONAS[i].id, visited);
+      for (var j = 0; j < sub.length; j++) out.push(sub[j]);
+    }
+  }
+  return out;
+}
+
+function addAuditLocal(type, action, targetId, detail, scope, category) {
+  var entry = { id:'A'+Date.now(), action:action, userId:currentUser.id, targetId:targetId,
+    detail:detail, at:nowStr(), type:type, scope:scope||[currentUser.id], category:category||'general' };
+  auditLog.unshift(entry);
+  var send = JSON.parse(JSON.stringify(entry));
+  send.scope = send.scope.join('|');
+  api('addAudit', send);
+}
+
+// ── TOPBAR ────────────────────────────────────────────────────
+function updateTopbar() {
+  document.getElementById('topbar-name').textContent = currentUser.name;
+  document.getElementById('topbar-role').textContent = currentUser.role[0].toUpperCase()+currentUser.role.slice(1);
+  document.getElementById('topbar-avatar').textContent = currentUser.initials;
+}
+
+function showUserMenu() {
+  document.getElementById('usermenu-content').innerHTML =
+    '<div class="card" style="text-align:center">' +
+      '<div class="avatar" style="width:52px;height:52px;font-size:18px;margin:0 auto 12px">'+currentUser.initials+'</div>' +
+      '<div style="font-weight:600;color:var(--white);font-size:15px">'+currentUser.name+'</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+googleEmail+'</div>' +
+      '<div style="margin-top:8px"><span class="role-badge" style="background:'+roleBadgeBg(currentUser.role)+';color:var(--navy)">'+currentUser.role+'</span></div>' +
+      '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">'+currentUser.dept+'</div>' +
+    '</div>' +
+    '<button class="btn btn-ghost btn-full" onclick="signOut()">Sign Out</button>';
+  openPanel('panel-usermenu');
+}
+
+function roleBadgeBg(r) { return r==='admin'?'var(--rose)':r==='manager'?'var(--amber)':'var(--sky)'; }
+
+function signOut() {
+  google.accounts.id.disableAutoSelect();
+  currentUser = null; googleEmail = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-error').style.display = 'none';
+  closePanel('panel-usermenu');
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+var TABS = {
+  my:      { label:'My Leave', icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' },
+  manager: { label:'Team',     icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  admin:   { label:'Admin',    icon:'<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14M12 2v2M12 20v2M2 12h2M20 12h2"/>' }
+};
+function allowedTabs() {
+  if (currentUser.role === 'admin')   return ['my','manager','admin'];
+  if (currentUser.role === 'manager') return ['my','manager'];
+  return ['my'];
+}
+function renderNav() {
+  var tabs = allowedTabs();
+  if (tabs.indexOf(currentTab) < 0) currentTab = 'my';
+  var html = '';
+  for (var i = 0; i < tabs.length; i++) {
+    var k = tabs[i], t = TABS[k];
+    html += '<div class="nav-tab '+(currentTab===k?'active':'')+'" onclick="switchTab(\''+k+'\')" '+(k==='manager'?'style="position:relative"':'')+'>'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+t.icon+'</svg>'+
+      t.label+
+      (k==='manager'?'<div class="bubble" id="pending-bubble" style="display:none">0</div>':'')+
+    '</div>';
+  }
+  document.getElementById('bottom-nav').innerHTML = html;
+  updatePendingBubble();
+}
+function updatePendingBubble() {
+  var b = document.getElementById('pending-bubble'); if (!b) return;
+  var tree = getAllReports(currentUser.id).map(function(p){ return p.id; });
+  var n = 0;
+  for (var i = 0; i < leaves.length; i++) {
+    if (leaves[i].status === 'pending' && tree.indexOf(leaves[i].userId) >= 0) n++;
+  }
+  b.textContent = n; b.style.display = n > 0 ? 'flex' : 'none';
+}
+function switchTab(tab) { currentTab = tab; leaveFilter = 'all'; renderNav(); renderContent(); }
+function renderContent() {
+  if (currentTab === 'my')      renderMyLeave();
+  else if (currentTab === 'manager') renderManager();
+  else if (currentTab === 'admin')   renderAdmin();
+}
+
+// ── MY LEAVE ─────────────────────────────────────────────────
+function renderMyLeave() {
+  var myLeaves = leaves.filter(function(l){ return l.userId === currentUser.id; });
+  ensureBal(currentUser.id);
+  var bal = getBal(currentUser.id);
+  var filters = ['all','pending','approved','rejected'];
+  var filtered = leaveFilter === 'all' ? myLeaves : myLeaves.filter(function(l){ return l.status === leaveFilter; });
+  var bc = document.getElementById('nl-balance-card');
+  if (bc) bc.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Your Balance</div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Annual Leave</span>' +
+    '<span style="font-size:12px;font-family:var(--mono);color:var(--mint)">'+(bal.annual||0)+' / '+QUOTAS.annual+' days</span></div>' +
+    '<div class="balance-bar"><div class="balance-fill" style="width:'+Math.min(100,Math.round((bal.annual||0)/QUOTAS.annual*100))+'%"></div></div>';
+
+  var leaveItems = filtered.length === 0
+    ? '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No requests found</div></div>'
+    : filtered.map(function(l){
+        return '<div class="leave-item" onclick="openLeaveDetail(\''+l.id+'\')" style="cursor:pointer">' +
+          '<div class="leave-item-top"><div>'+typePill(l.type)+'<div class="leave-item-dates" style="margin-top:6px">'+fmt(l.start)+' → '+fmt(l.end)+' · <strong>'+l.days+'d</strong></div></div>' +
+          (l.type==='Management Awarded Leave'?statusBadge('awarded'):statusBadge(l.status))+'</div>'+
+          (l.category?'<div class="leave-item-meta">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':
+           l.awardComment?'<div class="leave-item-meta">🏅 '+l.awardComment+'</div>':'')+
+        '</div>';
+      }).join('');
+
+  document.getElementById('main-content').innerHTML =
+    '<div><div class="section-title">Leave Balance</div>' +
+    '<div class="stats-grid" style="margin-top:8px">' +
+      balanceCard('Annual','annual',bal.annual||0) +
+      balanceCard('Sick','sick',bal.sick||0) +
+      balanceCard('Personal','personal',bal.personal||0) +
+      '<div class="stat-card" style="cursor:pointer;border-color:var(--sky)" onclick="openPanel(\'panel-newleave\')">' +
+        '<div style="font-size:28px;text-align:center;margin-bottom:4px">＋</div>' +
+        '<div class="stat-label" style="text-align:center;font-size:12px;color:var(--sky);font-weight:600">New Request</div>' +
+      '</div>' +
+    '</div></div>' +
+    '<div><div class="section-title" style="margin-bottom:8px">My Requests</div>' +
+    '<div class="chip-row" style="margin-bottom:10px">' +
+      filters.map(function(f){ return '<div class="chip '+(leaveFilter===f?'active':'')+'" onclick="setLeaveFilter(\''+f+'\')">'+f[0].toUpperCase()+f.slice(1)+'</div>'; }).join('') +
+    '</div><div class="card">'+leaveItems+'</div></div>' +
+    inlineAuditSection(function(a){ return a.scope && a.scope.indexOf(currentUser.id) >= 0; }, 'my-audit-toggle','my-audit-content','🕐 My Activity Log');
+}
+function balanceCard(label, key, used) {
+  var total = QUOTAS[key] || 20, pct = Math.min(100, Math.round(used/total*100));
+  var color = used/total > .8 ? 'var(--rose)' : used/total > .5 ? 'var(--amber)' : 'linear-gradient(90deg,var(--sky),var(--mint))';
+  return '<div class="stat-card"><div class="stat-value">'+used+'</div><div class="stat-label">'+label+' used / '+total+'</div>' +
+    '<div class="balance-bar"><div class="balance-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>';
+}
+function setLeaveFilter(f) { leaveFilter = f; renderMyLeave(); }
+
+// ── LEAVE DETAIL ─────────────────────────────────────────────
+function openLeaveDetail(id) {
+  var l = null;
+  for (var i = 0; i < leaves.length; i++) { if (leaves[i].id === id) { l = leaves[i]; break; } }
+  if (!l) return;
+  var emp = getUser(l.userId), mgr = getUser(l.managerId);
+  var isAwarded = l.type === 'Management Awarded Leave';
+  document.getElementById('detail-title').textContent = l.id + ' — ' + l.type;
+  document.getElementById('detail-content').innerHTML =
+    '<div class="card">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+        '<div class="avatar">'+emp.initials+'</div>' +
+        '<div><div style="font-weight:600;color:var(--white)">'+emp.name+'</div><div style="font-size:11px;color:var(--text-dim)">'+emp.dept+'</div></div>' +
+        '<div style="margin-left:auto">'+(isAwarded?statusBadge('awarded'):statusBadge(l.status))+'</div>' +
+      '</div><div class="divider" style="margin-bottom:12px"></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+        '<div><div class="form-hint">Type</div><div style="margin-top:3px">'+typePill(l.type)+'</div></div>' +
+        '<div><div class="form-hint">Duration</div><div style="font-size:13px;color:var(--white);margin-top:3px">'+l.days+' day'+(l.days!='1'?'s':'')+'</div></div>' +
+        '<div><div class="form-hint">Start</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.start)+'</div></div>' +
+        '<div><div class="form-hint">End</div><div style="font-size:13px;color:var(--white);font-family:var(--mono);margin-top:3px">'+fmt(l.end)+'</div></div>' +
+      '</div>' +
+      (l.category?'<div style="margin-top:12px"><div class="form-hint">Category</div><div style="margin-top:3px"><span class="type-pill type-personal">'+l.category+'</span></div></div>':'')+
+      (l.reason?'<div style="margin-top:10px"><div class="form-hint">Remarks</div><div style="font-size:13px;color:var(--mist);margin-top:3px">"'+l.reason+'"</div></div>':'')+
+      (l.awardComment?'<div style="margin-top:10px"><div class="form-hint">Approval Source</div><div style="font-size:13px;color:var(--amber);margin-top:3px">🏅 '+l.awardComment+'</div></div>':'')+
+    '</div>' +
+    (isAwarded ? '<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Management Awarded Leave bypasses the standard approval workflow.</div>' :
+      '<div><div class="section-title" style="margin-bottom:8px">Approval Timeline</div><div class="timeline">' +
+        '<div class="tl-item"><div class="tl-line"><div class="tl-dot done"></div><div class="tl-connector"></div></div><div class="tl-body"><div class="tl-label">Submitted</div><div class="tl-meta">'+emp.name+' · '+fmtTs(l.createdAt)+'</div></div></div>' +
+        '<div class="tl-item"><div class="tl-line"><div class="tl-dot '+(l.status==='approved'?'done':l.status==='rejected'?'rejected':'pending')+'"></div>'+(l.status!=='pending'?'<div class="tl-connector"></div>':'')+'</div>' +
+          '<div class="tl-body"><div class="tl-label">Manager Review — '+(mgr.name||'—')+'</div>' +
+          '<div class="tl-meta">'+(l.status==='pending'?'Awaiting review':l.status==='approved'?'Approved · '+fmtTs(l.approvedAt):'Rejected · '+fmtTs(l.rejectedAt)+(l.rejectReason?' — '+l.rejectReason:''))+'</div></div></div>' +
+        (l.status==='approved'?'<div class="tl-item"><div class="tl-line"><div class="tl-dot done"></div></div><div class="tl-body"><div class="tl-label">Confirmed</div><div class="tl-meta">Leave recorded in system</div></div></div>':'')+
+      '</div></div>');
+
+  var tree = getAllReports(currentUser.id).map(function(p){ return p.id; });
+  var isMgr = tree.indexOf(l.userId) >= 0 && l.status === 'pending' && !isAwarded;
+  var isAdmin = currentUser.role === 'admin';
+  document.getElementById('detail-footer').innerHTML = isMgr
+    ? '<button class="btn btn-reject" style="flex:1" onclick="actionLeave(\''+l.id+'\',\'reject\')">Reject</button><button class="btn btn-approve" style="flex:2" onclick="actionLeave(\''+l.id+'\',\'approve\')">Approve</button>'
+    : (isAdmin && !isAwarded && l.status !== 'rejected'
+        ? '<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button><button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button><button class="btn btn-ghost btn-sm" onclick="closePanel(\'panel-detail\')">Close</button>'
+        : '<button class="btn btn-primary btn-full" onclick="closePanel(\'panel-detail\')">Close</button>');
+  openPanel('panel-detail');
+}
+
+// ── SUBMIT LEAVE ──────────────────────────────────────────────
+function submitLeave() {
+  var type     = document.getElementById('leave-type').value;
+  var start    = document.getElementById('leave-start').value;
+  var end      = document.getElementById('leave-end').value;
+  var days     = document.getElementById('leave-days').value;
+  var category = document.getElementById('leave-category').value;
+  var reason   = document.getElementById('leave-reason').value.trim();
+  var cover    = document.getElementById('leave-cover').value;
+  if (!type||!start||!end||!category) { toast('Please fill required fields','#EF4444'); return; }
+  var mgr = getUser(currentUser.manager);
+  var id  = uid();
+  var rec = { id:id, userId:currentUser.id, type:type, start:start, end:end, days:days,
+    category:category, reason:reason, awardComment:'', status:'pending',
+    managerId:currentUser.manager||'admin1', createdAt:nowStr(),
+    approvedAt:'', approvedBy:'', rejectedAt:'', rejectedBy:'', rejectReason:'', cover:cover };
+  leaves.unshift(rec);
+  var scope = [currentUser.id, currentUser.manager||'admin1'];
+  addAuditLocal('s','submitted',id, currentUser.name+' submitted '+type+' — '+category+' ('+days+'d)', scope, 'submission');
+  api('upsertLeave', rec).then(function(){ toast('Request submitted to '+(mgr.name||'manager'),'#00C49F'); });
+  closePanel('panel-newleave'); renderMyLeave();
+}
+
+// ── MANAGER VIEW ──────────────────────────────────────────────
+function renderManager() {
+  var tree    = getAllReports(currentUser.id);
+  var treeIds = tree.map(function(p){ return p.id; });
+  var pending = leaves.filter(function(l){ return l.status==='pending' && treeIds.indexOf(l.userId)>=0 && l.type!=='Management Awarded Leave'; });
+  var allTeam = leaves.filter(function(l){ return treeIds.indexOf(l.userId)>=0; });
+  var approved = allTeam.filter(function(l){ return l.status==='approved'; }).length;
+  var rejected = allTeam.filter(function(l){ return l.status==='rejected'; }).length;
+
+  var pendingHtml = '';
+  if (pending.length) {
+    pendingHtml = '<div><div class="section-title" style="margin-bottom:8px">Needs Your Approval</div><div class="card">' +
+      pending.map(function(l){
+        var emp = getUser(l.userId);
+        return '<div class="leave-item">' +
+          '<div class="leave-item-top"><div style="display:flex;align-items:center;gap:8px">' +
+            '<div class="avatar" style="width:28px;height:28px;font-size:10px">'+emp.initials+'</div>' +
+            '<div><div class="leave-item-name">'+emp.name+'</div><div class="leave-item-meta">'+fmt(l.start)+(l.days>1?' → '+fmt(l.end):'')+' · '+l.days+'d</div></div>' +
+          '</div>'+typePill(l.type)+'</div>' +
+          (l.category?'<div class="leave-item-meta" style="padding-left:36px">📂 '+l.category+(l.reason?' · "'+l.reason+'"':'')+'</div>':'')+
+          '<div class="leave-item-actions" style="padding-left:36px">' +
+            '<button class="btn btn-reject btn-sm" onclick="actionLeave(\''+l.id+'\',\'reject\');event.stopPropagation()">Reject</button>' +
+            '<button class="btn btn-approve btn-sm" onclick="actionLeave(\''+l.id+'\',\'approve\');event.stopPropagation()">Approve</button>' +
+            '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\');event.stopPropagation()">View</button>' +
+            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+l.userId+'\');event.stopPropagation()">+ Award</button>' +
+          '</div></div>';
+      }).join('') + '</div></div>';
+  }
+
+  document.getElementById('main-content').innerHTML =
+    '<div class="stats-grid">' +
+      '<div class="stat-card"><div class="stat-value" style="color:var(--amber)">'+pending.length+'</div><div class="stat-label">Pending Approval</div></div>' +
+      '<div class="stat-card"><div class="stat-value">'+tree.length+'</div><div class="stat-label">Total Reports</div></div>' +
+      '<div class="stat-card"><div class="stat-value" style="color:var(--mint)">'+approved+'</div><div class="stat-label">Approved Total</div></div>' +
+      '<div class="stat-card"><div class="stat-value" style="color:var(--rose)">'+rejected+'</div><div class="stat-label">Rejected Total</div></div>' +
+    '</div>' + pendingHtml +
+    '<div><div class="section-title" style="margin-bottom:8px">Team Overview</div><div class="card">' +
+      tree.map(function(emp){
+        ensureBal(emp.id); var bal = getBal(emp.id);
+        var isDirect = emp.manager === currentUser.id ? 'direct' : 'indirect';
+        return '<div class="role-item">' +
+          '<div class="role-user"><div class="avatar" style="width:30px;height:30px;font-size:11px">'+emp.initials+'</div>' +
+          '<div class="role-info"><div class="role-name">'+emp.name+' <span style="font-size:9px;color:var(--text-dim)">'+isDirect+'</span></div>' +
+          '<div class="role-email">'+(bal.annual||0)+'/'+QUOTAS.annual+' annual used</div></div></div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<div class="balance-bar" style="width:50px"><div class="balance-fill" style="width:'+Math.round((bal.annual||0)/QUOTAS.annual*100)+'%"></div></div>' +
+            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+emp.id+'\')">Award</button>' +
+          '</div></div>';
+      }).join('') +
+    '</div></div>' +
+    '<div><div class="section-title" style="margin-bottom:8px">Leave Distribution</div><div class="card">' +
+      hbar('Annual', sumDays(allTeam,'Annual Leave'),   30,'#2E8EE8') +
+      hbar('Sick',   sumDays(allTeam,'Sick Leave'),     30,'#EF4444') +
+      hbar('Personal',sumDays(allTeam,'Personal Leave'),30,'#C084FC') +
+      hbar('Awarded', sumDays(allTeam,'Management Awarded Leave'),30,'#F59E0B') +
+    '</div></div>' +
+    inlineAuditSection(
+      function(a){ return a.scope && (a.scope.indexOf(currentUser.id)>=0 || treeIds.some(function(id){ return a.scope.indexOf(id)>=0; })); },
+      'mgr-audit-toggle','mgr-audit-content','🕐 Team Activity Log');
+}
+function sumDays(arr, type) {
+  var s = 0;
+  for (var i = 0; i < arr.length; i++) { if (arr[i].type === type) s += parseFloat(arr[i].days)||0; }
+  return s;
+}
+function hbar(label,val,max,color) {
+  return '<div class="hbar-row"><div class="hbar-label">'+label+'</div><div class="hbar-track"><div class="hbar-fill" style="width:'+Math.round(Math.min(val,max)/max*100)+'%;background:'+color+'"></div></div><div class="hbar-val">'+val+'d</div></div>';
+}
+function actionLeave(id, action) {
+  var l = null; for (var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
+  if (!l) return;
+  var emp = getUser(l.userId);
+  var scope = [l.userId, currentUser.id, 'admin1'];
+  if (action === 'approve') {
+    l.status='approved'; l.approvedAt=nowStr(); l.approvedBy=currentUser.id;
+    addAuditLocal('a','approved',l.id,currentUser.name+' approved '+l.type+' for '+emp.name,scope,'approval');
+    api('upsertLeave', l);
+    toast('✓ Approved '+emp.name+'\'s '+l.type,'#00C49F');
+  } else {
+    l.status='rejected'; l.rejectedAt=nowStr(); l.rejectedBy=currentUser.id;
+    addAuditLocal('r','rejected',l.id,currentUser.name+' rejected '+l.type+' for '+emp.name,scope,'rejection');
+    api('upsertLeave', l);
+    toast('✕ Rejected '+emp.name+'\'s request','#EF4444');
+  }
+  closePanel('panel-detail'); renderContent();
+}
+
+// ── AWARD LEAVE ───────────────────────────────────────────────
+function openAwardPanel(userId) {
+  awardTargetId = userId;
+  document.getElementById('award-title').textContent = 'Award Leave — '+getUser(userId).name;
+  document.getElementById('award-comment').value = '';
+  openPanel('panel-award');
+}
+function submitAward() {
+  var start   = document.getElementById('award-start').value;
+  var end     = document.getElementById('award-end').value;
+  var days    = document.getElementById('award-days').value;
+  var comment = document.getElementById('award-comment').value.trim();
+  if (!start||!end||!comment) { toast('Please fill all required fields','#EF4444'); return; }
+  var emp = getUser(awardTargetId);
+  var id  = uid();
+  var rec = { id:id, userId:awardTargetId, type:'Management Awarded Leave', start:start, end:end,
+    days:days, category:'Awarded', reason:'', awardComment:comment, status:'approved',
+    managerId:currentUser.id, createdAt:nowStr(), approvedAt:nowStr(), approvedBy:currentUser.id,
+    rejectedAt:'', rejectedBy:'', rejectReason:'', cover:'Not required' };
+  leaves.unshift(rec);
+  ensureBal(awardTargetId);
+  balancesMap[awardTargetId].awarded = parseFloat(balancesMap[awardTargetId].awarded||0) + parseFloat(days);
+  var scope = [awardTargetId, currentUser.id, 'admin1'];
+  addAuditLocal('w','awarded',id,currentUser.name+' awarded '+days+'d leave to '+emp.name+' — '+comment,scope,'awarded');
+  api('upsertLeave', rec);
+  api('upsertBalance', balancesMap[awardTargetId]);
+  closePanel('panel-award'); toast('🏅 Leave awarded to '+emp.name,'#F59E0B'); renderContent();
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────
+function renderAdmin() {
+  var pending = leaves.filter(function(l){ return l.status==='pending' && l.type!=='Management Awarded Leave'; });
+  document.getElementById('main-content').innerHTML =
+    '<div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+    '<input class="search-input" placeholder="Search people…" oninput="filterAdmin(this.value)"></div>' +
+    '<div><button class="btn btn-ghost btn-full" onclick="openPanel(\'panel-csv\')">📂 Import via CSV</button></div>' +
+    '<div><div class="section-title" style="margin-bottom:8px">Roles & Permissions</div><div class="card" id="admin-user-list">'+renderAdminUsers('')+'</div></div>' +
+    '<div><div class="section-title" style="margin-bottom:8px">Leave Credits</div><div class="card">' +
+      PERSONAS.map(function(p){
+        ensureBal(p.id); var bal = getBal(p.id);
+        return '<div class="role-item"><div class="role-user">' +
+          '<div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>' +
+          '<div class="role-info"><div class="role-name">'+p.name+'</div>' +
+          '<div class="role-email">Ann:'+(bal.annual||0)+' · Sick:'+(bal.sick||0)+' · Per:'+(bal.personal||0)+' · Awd:'+(bal.awarded||0)+'</div></div></div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button class="btn btn-ghost btn-sm" onclick="openCreditEditor(\''+p.id+'\')">Edit</button>' +
+            '<button class="btn btn-violet btn-sm" onclick="openAwardPanel(\''+p.id+'\')">Award</button>' +
+          '</div></div>';
+      }).join('') +
+    '</div></div>' +
+    '<div><div class="section-title" style="margin-bottom:8px">Pending Overrides</div><div class="card">' +
+      (pending.length === 0 ? '<div class="empty"><div class="empty-title">No pending items</div></div>' :
+        pending.map(function(l){
+          var emp=getUser(l.userId), mgr=getUser(l.managerId);
+          return '<div class="leave-item"><div class="leave-item-top"><div>' +
+            '<div class="leave-item-name">'+emp.name+'</div>' +
+            '<div class="leave-item-meta">'+fmt(l.start)+' · '+l.days+'d · via '+(mgr.name||'—')+'</div></div>'+typePill(l.type)+'</div>'+
+            (l.category?'<div class="leave-item-meta">📂 '+l.category+'</div>':'')+
+            '<div class="leave-item-actions">' +
+              '<button class="btn btn-ghost btn-sm" onclick="openLeaveDetail(\''+l.id+'\')">View</button>' +
+              '<button class="btn btn-approve btn-sm" onclick="adminApproveLeave(\''+l.id+'\')">Force Approve</button>' +
+              '<button class="btn btn-reject btn-sm" onclick="adminRejectLeave(\''+l.id+'\')">Force Reject</button>' +
+            '</div></div>';
+        }).join('')) +
+    '</div></div>' +
+    '<div class="card" style="padding:10px 14px">' +
+      '<div class="audit-toggle" id="admin-audit-toggle" onclick="toggleAudit(\'admin-audit-toggle\',\'admin-audit-content\')">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+        '<span>🕐 Admin Activity Log</span>' +
+        '<span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+auditLog.filter(function(a){ return a.scope && a.scope.indexOf('admin1')>=0; }).length+' entries</span>' +
+      '</div>' +
+      '<div class="audit-inline" id="admin-audit-content">'+auditEntriesHtml(auditLog.filter(function(a){ return a.scope && a.scope.indexOf('admin1')>=0; }))+'</div>' +
+      '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">' +
+        '<button class="btn btn-ghost btn-full btn-sm" onclick="openFullAuditPanel()">🔍 Full Log & Export</button>' +
+      '</div>' +
+    '</div>';
+}
+function renderAdminUsers(q) {
+  var list = q ? PERSONAS.filter(function(p){ return p.name.toLowerCase().indexOf(q.toLowerCase())>=0; }) : PERSONAS;
+  return list.map(function(p){
+    return '<div class="role-item"><div class="role-user">' +
+      '<div class="avatar" style="width:30px;height:30px;font-size:11px">'+p.initials+'</div>' +
+      '<div class="role-info"><div class="role-name">'+p.name+'</div><div class="role-email">'+p.dept+'</div></div></div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        '<span class="role-badge" style="background:'+roleBadgeBg(p.role)+';color:var(--navy)">'+p.role+'</span>' +
+        '<button class="btn btn-ghost btn-sm" onclick="editRole(\''+p.id+'\')">Edit</button>' +
+      '</div></div>';
+  }).join('');
+}
+function filterAdmin(q) { document.getElementById('admin-user-list').innerHTML = renderAdminUsers(q); }
+function editRole(id) {
+  var p = getUser(id);
+  var roles = ['employee','manager','admin'];
+  var old = p.role; p.role = roles[(roles.indexOf(p.role)+1)%roles.length];
+  addAuditLocal('e','role_edit',id,currentUser.name+' changed '+p.name+'\'s role from '+old+' to '+p.role,['admin1'],'admin');
+  api('upsertEmployee', p);
+  toast(p.name+' is now '+p.role,'#2E8EE8'); renderAdmin();
+}
+function adminApproveLeave(id) {
+  var l=null; for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
+  if(!l)return; var emp=getUser(l.userId);
+  l.status='approved'; l.approvedAt=nowStr(); l.approvedBy=currentUser.id;
+  addAuditLocal('a','admin_approved',id,currentUser.name+' force-approved '+l.type+' for '+emp.name,['admin1',l.userId,l.managerId],'approval');
+  api('upsertLeave',l); toast('Admin override: Approved ✓','#00C49F'); closePanel('panel-detail'); renderContent();
+}
+function adminRejectLeave(id) {
+  var l=null; for(var i=0;i<leaves.length;i++){if(leaves[i].id===id){l=leaves[i];break;}}
+  if(!l)return; var emp=getUser(l.userId);
+  l.status='rejected'; l.rejectedAt=nowStr(); l.rejectedBy=currentUser.id;
+  addAuditLocal('r','admin_rejected',id,currentUser.name+' force-rejected '+l.type+' for '+emp.name,['admin1',l.userId,l.managerId],'rejection');
+  api('upsertLeave',l); toast('Admin override: Rejected','#EF4444'); closePanel('panel-detail'); renderContent();
+}
+
+// ── CREDITS ───────────────────────────────────────────────────
+function openCreditEditor(userId) {
+  var p = getUser(userId); ensureBal(userId); var bal = getBal(userId);
+  creditTarget = userId;
+  document.getElementById('credits-title').textContent = 'Credits — '+p.name;
+  var types = [['Annual Leave','annual'],['Sick Leave','sick'],['Personal Leave','personal'],['Parental Leave','parental'],['Unpaid Leave','unpaid']];
+  document.getElementById('credits-content').innerHTML = '<div class="card">' +
+    types.map(function(t){
+      return '<div class="credit-row"><div class="credit-label">'+t[0]+'</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<span style="font-size:11px;color:var(--text-dim)">/ '+QUOTAS[t[1]]+'</span>' +
+          '<input class="credit-input" type="number" id="credit-'+t[1]+'" value="'+(bal[t[1]]||0)+'" min="0" step="0.5">' +
+        '</div></div>';
+    }).join('') + '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim)">Changes will be logged in the audit trail.</div>';
+  openPanel('panel-credits');
+}
+function saveCredits() {
+  if (!creditTarget) return;
+  var p = getUser(creditTarget); ensureBal(creditTarget); var bal = balancesMap[creditTarget];
+  var types = [['annual','Annual Leave'],['sick','Sick Leave'],['personal','Personal Leave'],['parental','Parental Leave'],['unpaid','Unpaid Leave']];
+  var changes = [];
+  types.forEach(function(t){
+    var el = document.getElementById('credit-'+t[0]); if (!el) return;
+    var nv = parseFloat(el.value)||0;
+    if (nv !== parseFloat(bal[t[0]]||0)) { changes.push(t[1]+': '+(bal[t[0]]||0)+'→'+nv); bal[t[0]]=nv; }
+  });
+  if (changes.length) {
+    addAuditLocal('c','credit_edit',creditTarget,currentUser.name+' updated credits for '+p.name+' — '+changes.join(', '),['admin1'],'admin');
+    api('upsertBalance', bal);
+    toast('Credits updated for '+p.name,'#C084FC');
+  } else toast('No changes made','#8FA3BA');
+  closePanel('panel-credits'); renderAdmin();
+}
+
+// ── FULL AUDIT ────────────────────────────────────────────────
+function openFullAuditPanel() { renderFullAuditPanel(); openPanel('panel-fullaudit'); }
+function renderFullAuditPanel() {
+  var f = auditExportFilters;
+  var filtered = auditLog.filter(function(a){
+    if (f.type !== 'all' && a.type !== f.type) return false;
+    if (f.category !== 'all' && a.category !== f.category) return false;
+    if (f.dateFrom && a.at < f.dateFrom) return false;
+    if (f.dateTo   && a.at > f.dateTo+' 23:59') return false;
+    return true;
+  });
+  var typeOpts = ['all','a','r','s','e','c','w'];
+  var typeLabels = {all:'All Types',a:'Approvals',r:'Rejections',s:'Submissions',e:'Role Edits',c:'Credits',w:'Awarded'};
+  var catOpts = ['all','approval','rejection','submission','admin','awarded'];
+  document.getElementById('fullaudit-content').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+      '<div class="form-row">' +
+        '<div class="form-group"><label class="form-label">From Date</label><input type="date" class="form-input" value="'+f.dateFrom+'" onchange="auditExportFilters.dateFrom=this.value;renderFullAuditPanel()"></div>' +
+        '<div class="form-group"><label class="form-label">To Date</label><input type="date" class="form-input" value="'+f.dateTo+'" onchange="auditExportFilters.dateTo=this.value;renderFullAuditPanel()"></div>' +
+      '</div>' +
+      '<div class="form-row">' +
+        '<div class="form-group"><label class="form-label">Action Type</label><select class="form-select" onchange="auditExportFilters.type=this.value;renderFullAuditPanel()">'+
+          typeOpts.map(function(v){ return '<option value="'+v+'"'+(f.type===v?' selected':'')+'>'+typeLabels[v]+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="form-group"><label class="form-label">Category</label><select class="form-select" onchange="auditExportFilters.category=this.value;renderFullAuditPanel()">'+
+          catOpts.map(function(v){ return '<option value="'+v+'"'+(f.category===v?' selected':'')+'>'+v[0].toUpperCase()+v.slice(1)+'</option>'; }).join('') +
+        '</select></div>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-dim)">'+filtered.length+' entries matching filters</div>' +
+    '</div>' +
+    '<div class="card">'+
+      (filtered.length===0?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No entries</div></div>':
+        filtered.map(function(a){
+          return '<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>' +
+            '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+' · '+(a.category||'')+'</div></div></div>';
+        }).join(''))+
+    '</div>';
+}
+function exportAuditCSV() {
+  var f = auditExportFilters;
+  var filtered = auditLog.filter(function(a){
+    if (f.type !== 'all' && a.type !== f.type) return false;
+    if (f.category !== 'all' && a.category !== f.category) return false;
+    if (f.dateFrom && a.at < f.dateFrom) return false;
+    if (f.dateTo   && a.at > f.dateTo+' 23:59') return false;
+    return true;
+  });
+  var hdr = ['ID','Action','User','Target','Detail','Timestamp','Category'];
+  var rows = filtered.map(function(a){
+    return [a.id, a.action, getUser(a.userId).name||a.userId, a.targetId, '"'+a.detail.replace(/"/g,'""')+'"', a.at, a.category||''].join(',');
+  });
+  var csv = [hdr.join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv],{type:'text/csv'});
+  var url  = URL.createObjectURL(blob);
+  var el   = document.createElement('a'); el.href=url; el.download='leaveflow_audit.csv'; el.click();
+  URL.revokeObjectURL(url);
+  toast('Audit log exported ✓','#00C49F');
+}
+
+// ── INLINE AUDIT ──────────────────────────────────────────────
+function auditEntriesHtml(entries) {
+  if (!entries.length) return '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">No activity yet.</div>';
+  return entries.map(function(a){
+    return '<div class="audit-item"><div class="audit-icon '+a.type+'">'+(AUDIT_ICONS[a.type]||'•')+'</div>' +
+      '<div><div class="audit-text">'+a.detail+'</div><div class="audit-time">'+fmtTs(a.at)+' · '+a.id+'</div></div></div>';
+  }).join('');
+}
+function inlineAuditSection(filterFn, toggleId, contentId, label) {
+  var entries = auditLog.filter(filterFn);
+  return '<div class="card" style="padding:10px 14px">' +
+    '<div class="audit-toggle" id="'+toggleId+'" onclick="toggleAudit(\''+toggleId+'\',\''+contentId+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+    '<span>'+label+'</span><span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-family:var(--mono)">'+entries.length+' entries</span></div>' +
+    '<div class="audit-inline" id="'+contentId+'">'+auditEntriesHtml(entries)+'</div></div>';
+}
+function toggleAudit(toggleId, contentId) {
+  document.getElementById(toggleId).classList.toggle('open');
+  document.getElementById(contentId).classList.toggle('open');
+}
+
+// ── CSV IMPORT ────────────────────────────────────────────────
+function csvDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('over')}
+function csvDragLeave(){document.getElementById('drop-zone').classList.remove('over')}
+function csvDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('over');var f=e.dataTransfer.files[0];if(f)parseCSV(f)}
+function csvFileSelected(e){var f=e.target.files[0];if(f)parseCSV(f)}
+function parseCSV(file) {
+  var r = new FileReader();
+  r.onload = function(ev){
+    var lines = ev.target.result.trim().split('\n').filter(function(l){return l.trim();});
+    if (lines.length < 2) { toast('CSV must have a header and at least one row','#EF4444'); return; }
+    var hdr = lines[0].split(',').map(function(h){return h.trim().toLowerCase().replace(/['"]/g,'');});
+    csvParsed = lines.slice(1).map(function(line){
+      var vals = line.split(',').map(function(v){return v.trim().replace(/^["']|["']$/g,'');});
+      var obj = {}; hdr.forEach(function(h,i){obj[h]=vals[i]||'';});
+      return obj;
+    }).filter(function(r){return r.id&&r.name&&r.role;});
+    showCSVPreview();
+  };
+  r.readAsText(file);
+}
+function showCSVPreview() {
+  var adds    = csvParsed.filter(function(r){return !PERSONAS.find(function(p){return p.id===r.id;});});
+  var updates = csvParsed.filter(function(r){return  PERSONAS.find(function(p){return p.id===r.id;});});
+  document.getElementById('csv-preview').innerHTML =
+    '<div style="font-size:12px;color:var(--text-dim);margin:10px 0"><strong style="color:var(--mint)">'+adds.length+'</strong> new · <strong style="color:var(--amber)">'+updates.length+'</strong> updates</div>' +
+    '<div class="card" style="overflow-x:auto">' +
+      '<div class="preview-row"><span class="preview-cell preview-head">ID</span><span class="preview-cell preview-head">Name</span><span class="preview-cell preview-head">Role</span><span class="preview-cell preview-head">Action</span></div>' +
+      csvParsed.map(function(r){
+        var ex = PERSONAS.find(function(p){return p.id===r.id;});
+        return '<div class="preview-row"><span class="preview-cell">'+r.id+'</span><span class="preview-cell">'+r.name+'</span><span class="preview-cell">'+r.role+'</span><span class="preview-cell" style="color:'+(ex?'var(--amber)':'var(--mint)')+')">'+(ex?'Update':'Add')+'</span></div>';
+      }).join('') +
+    '</div>';
+  document.getElementById('csv-footer').innerHTML =
+    '<button class="btn btn-ghost" style="flex:1" onclick="closePanel(\'panel-csv\')">Cancel</button>' +
+    '<button class="btn btn-primary" style="flex:2" onclick="confirmCSVImport()">Confirm Import</button>';
+}
+function confirmCSVImport() {
+  var added=0, updated=0;
+  var apiRows = [];
+  csvParsed.forEach(function(row){
+    var nm = row.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var ex = null;
+    for (var i=0;i<PERSONAS.length;i++){if(PERSONAS[i].id===row.id){ex=PERSONAS[i];break;}}
+    if (ex) {
+      ex.name=row.name; ex.role=row.role; ex.dept=row.department||ex.dept;
+      ex.manager=row.manager_id||ex.manager; ex.google_email=row.google_email||ex.google_email; ex.initials=nm;
+      apiRows.push(ex); updated++;
+    } else {
+      var p={id:row.id,name:row.name,initials:nm,role:row.role,dept:row.department||'',manager:row.manager_id||'',google_email:row.google_email||''};
+      PERSONAS.push(p); ensureBal(row.id); apiRows.push(p); added++;
+    }
+  });
+  addAuditLocal('u','csv_import','bulk',currentUser.name+' imported CSV — '+added+' added, '+updated+' updated',['admin1'],'admin');
+  api('importEmployees', { rows: apiRows });
+  toast('Imported: '+added+' added, '+updated+' updated','#00C49F');
+  csvParsed=[]; closePanel('panel-csv'); renderAdmin();
+}
+</script>
+</body>
+</html>
